@@ -8,10 +8,12 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Rental App',
+      debugShowCheckedModeBanner: false,
+      title: 'kocak',
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
