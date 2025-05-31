@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
-import 'screens/customer.dart';
-import 'screens/owner.dart';
-import 'screens/courier.dart';
-
+import 'package:misi_paket/screens/owner.dart';
+// import 'package:misi_paket/screens/customer.dart';
+// import 'package:misi_paket/screens/courier.dart';
+// import 'package:misi_paket/screens/login.dart';
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'kocak',
+      title: 'Rental App',
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: CustomerHome(), // langsung ke halaman Customer
+      // Ganti sesuai role yang ingin diuji
+      home: AdminHome(),
+      // home: CourierHome(),
+      // home: CustomerHome(),
     );
   }
 }
