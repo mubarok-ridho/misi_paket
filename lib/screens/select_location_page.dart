@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 class LokasiPickerPage extends StatefulWidget {
   @override
@@ -13,35 +14,40 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
   final TextEditingController jemputController = TextEditingController();
   final TextEditingController antarController = TextEditingController();
   final MapController mapController = MapController();
-  LatLng center = LatLng(-6.2, 106.8); // default Jakarta
+  LatLng center = LatLng(-6.2, 106.8);
   bool isLoading = false;
 
+  // Reverse Geocoding
   Future<String> getAddressFromLatLng(LatLng latLng) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latLng.latitude}&lon=${latLng.longitude}',
     );
-
     try {
-      final response = await http.get(url, headers: {
-        'User-Agent': 'misi_paket_app',
-      });
-
+      final response = await http.get(url, headers: {'User-Agent': 'misi_paket_app'});
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is Map && data.containsKey('display_name')) {
-          return data['display_name'];
-        } else {
-          print("Data tidak sesuai format: ${response.body}");
-          return 'Alamat tidak ditemukan';
-        }
-      } else {
-        print("Status bukan 200: ${response.statusCode}");
-        return 'Alamat tidak ditemukan';
+        return data['display_name'] ?? 'Alamat tidak ditemukan';
       }
-    } catch (e) {
-      print("Gagal mengambil alamat: $e");
-      return 'Alamat tidak ditemukan';
+    } catch (_) {}
+    return 'Alamat tidak ditemukan';
+  }
+
+  // Forward Geocoding: cari suggestion list
+  Future<List<LocationSuggestion>> fetchLocationSuggestions(String query) async {
+    final url = Uri.parse(
+      'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5',
+    );
+    final response = await http.get(url, headers: {'User-Agent': 'misi_paket_app'});
+    if (response.statusCode == 200) {
+      final List raw = jsonDecode(response.body);
+      return raw.map((item) {
+        final display = item['display_name'] as String;
+        final lat = double.tryParse(item['lat'] as String) ?? 0;
+        final lon = double.tryParse(item['lon'] as String) ?? 0;
+        return LocationSuggestion(display, LatLng(lat, lon));
+      }).toList();
     }
+    return [];
   }
 
   @override
@@ -62,20 +68,17 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ['a', 'b', 'c'],
                 userAgentPackageName: 'com.example.misi_paket',
               ),
             ],
           ),
 
-          // PIN TETAP DI TENGAH
-          Center(
-            child: Icon(Icons.location_on, size: 40, color: Colors.orange),
-          ),
+          // PIN di tengah
+          Center(child: Icon(Icons.location_on, size: 40, color: Colors.orange)),
 
-          // BOX INPUT ALAMAT (HANYA 1x)
+          // INPUT BOX (JEMPUT + ANTAR) dengan AUTOCOMPLETE
           Positioned(
             top: 60,
             left: 20,
@@ -88,15 +91,35 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
               padding: EdgeInsets.all(12),
               child: Column(
                 children: [
-                  _buildInputBox("Lokasi jemput paket kamu", jemputController),
+                  // Kolom Jemput
+                  _buildInputBox(
+                    "Lokasi jemput paket kamu",
+                    jemputController,
+                    (coords) {
+                      setState(() {
+                        center = coords;
+                      });
+                      mapController.move(coords, 15);
+                    },
+                  ),
                   SizedBox(height: 10),
-                  _buildInputBox("Lokasi antar paket kamu", antarController),
+                  // Kolom Antar
+                  _buildInputBox(
+                    "Lokasi antar paket kamu",
+                    antarController,
+                    (coords) {
+                      setState(() {
+                        center = coords;
+                      });
+                      mapController.move(coords, 15);
+                    },
+                  ),
                 ],
               ),
             ),
           ),
 
-          // BOTTOM PANEL
+          // BOTTOM PANEL (Set Lokasi)
           Positioned(
             bottom: 20,
             left: 20,
@@ -133,30 +156,19 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
 
                             if (jemputController.text.isEmpty) {
                               jemputController.text = alamat;
-                            } else if (antarController.text.isEmpty) {
-                              antarController.text = alamat;
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Kedua alamat sudah diisi."),
-                                ),
-                              );
-                              return;
+                              antarController.text = alamat;
                             }
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Alamat berhasil diatur."),
-                              ),
+                              SnackBar(content: Text("Alamat berhasil diatur")),
                             );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange,
                           ),
-                          child: Text(
-                            "Set Lokasi",
-                            style: TextStyle(color: Colors.white),
-                          ),
+                          child: Text("Set Lokasi",
+                              style: TextStyle(color: Colors.white)),
                         ),
                 ],
               ),
@@ -165,7 +177,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0, // Sesuaikan
+        currentIndex: 0,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: "Order"),
@@ -175,22 +187,65 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
     );
   }
 
-  Widget _buildInputBox(String hint, TextEditingController controller) {
+  Widget _buildInputBox(
+    String hint,
+    TextEditingController controller,
+    Function(LatLng) onSuggestionSelected,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.6),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: TextField(
-        controller: controller,
-        style: TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          border: InputBorder.none,
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.white70),
+      child: TypeAheadField<LocationSuggestion>(
+        textFieldConfiguration: TextFieldConfiguration(
+          controller: controller,
+          style: TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: InputBorder.none,
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.white70),
+          ),
+        ),
+        suggestionsCallback: (pattern) async {
+          if (pattern.trim().isEmpty) return [];
+          return await fetchLocationSuggestions(pattern);
+        },
+        itemBuilder: (context, suggestion) {
+          return ListTile(
+            title: Text(
+              suggestion.name,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          );
+        },
+        onSuggestionSelected: (suggestion) {
+          controller.text = suggestion.name;
+          onSuggestionSelected(suggestion.coords);
+        },
+        noItemsFoundBuilder: (context) => Padding(
+          padding: EdgeInsets.all(12),
+          child: Text(
+            'Tidak ada lokasi ditemukan',
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+        suggestionsBoxDecoration: SuggestionsBoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );
   }
+}
+
+/// Model suggestion untuk menyimpan hasil forward geocoding
+class LocationSuggestion {
+  final String name;
+  final LatLng coords;
+  LocationSuggestion(this.name, this.coords);
 }
