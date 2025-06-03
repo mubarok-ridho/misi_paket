@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:misi_paket/screens/owner.dart';
-// import 'package:misi_paket/screens/customer.dart';
+// import 'package:misi_paket/screens/owner.dart';
+import 'package:misi_paket/screens/customer.dart';
 // import 'package:misi_paket/screens/courier.dart';
 // import 'package:misi_paket/screens/login.dart';
 void main() {
@@ -10,15 +10,17 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    
     return MaterialApp(
-      title: 'Rental App',
+      debugShowCheckedModeBanner: false,
+      title: 'unik',
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
       // Ganti sesuai role yang ingin diuji
-      home: AdminHome(),
+      // home: AdminHome(),
       // home: CourierHome(),
-      // home: CustomerHome(),
+      home: CustomerDashboard(),
     );
   }
 }
