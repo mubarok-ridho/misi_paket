@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'pilih_kurir_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -13,11 +14,12 @@ class LokasiPickerPage extends StatefulWidget {
 class _LokasiPickerPageState extends State<LokasiPickerPage> {
   final TextEditingController jemputController = TextEditingController();
   final TextEditingController antarController = TextEditingController();
+  final FocusNode jemputFocus = FocusNode();
+  final FocusNode antarFocus = FocusNode();
   final MapController mapController = MapController();
   LatLng center = LatLng(-6.2, 106.8);
   bool isLoading = false;
 
-  // Reverse Geocoding
   Future<String> getAddressFromLatLng(LatLng latLng) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latLng.latitude}&lon=${latLng.longitude}',
@@ -32,7 +34,6 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
     return 'Alamat tidak ditemukan';
   }
 
-  // Forward Geocoding: cari suggestion list
   Future<List<LocationSuggestion>> fetchLocationSuggestions(String query) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5',
@@ -75,10 +76,8 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
             ],
           ),
 
-          // PIN di tengah
           Center(child: Icon(Icons.location_on, size: 40, color: Colors.orange)),
 
-          // INPUT BOX (JEMPUT + ANTAR) dengan AUTOCOMPLETE
           Positioned(
             top: 60,
             left: 20,
@@ -91,10 +90,10 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
               padding: EdgeInsets.all(12),
               child: Column(
                 children: [
-                  // Kolom Jemput
                   _buildInputBox(
                     "Lokasi jemput paket kamu",
                     jemputController,
+                    jemputFocus,
                     (coords) {
                       setState(() {
                         center = coords;
@@ -103,10 +102,10 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                     },
                   ),
                   SizedBox(height: 10),
-                  // Kolom Antar
                   _buildInputBox(
                     "Lokasi antar paket kamu",
                     antarController,
+                    antarFocus,
                     (coords) {
                       setState(() {
                         center = coords;
@@ -119,7 +118,6 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
             ),
           ),
 
-          // BOTTOM PANEL (Set Lokasi)
           Positioned(
             bottom: 20,
             left: 20,
@@ -147,29 +145,56 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                   ),
                   SizedBox(height: 10),
                   isLoading
-                      ? CircularProgressIndicator(color: Colors.orange)
-                      : ElevatedButton(
-                          onPressed: () async {
-                            setState(() => isLoading = true);
-                            final alamat = await getAddressFromLatLng(center);
-                            setState(() => isLoading = false);
+    ? CircularProgressIndicator(color: Colors.orange)
+    : Column(
+        children: [
+          ElevatedButton(
+            onPressed: () async {
+              setState(() => isLoading = true);
+              final alamat = await getAddressFromLatLng(center);
+              setState(() => isLoading = false);
 
-                            if (jemputController.text.isEmpty) {
-                              jemputController.text = alamat;
-                            } else {
-                              antarController.text = alamat;
-                            }
+              if (jemputFocus.hasFocus) {
+                jemputController.text = alamat;
+              } else if (antarFocus.hasFocus) {
+                antarController.text = alamat;
+              } else {
+                if (jemputController.text.isEmpty) {
+                  jemputController.text = alamat;
+                } else {
+                  antarController.text = alamat;
+                }
+              }
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Alamat berhasil diatur")),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                          ),
-                          child: Text("Set Lokasi",
-                              style: TextStyle(color: Colors.white)),
-                        ),
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Alamat berhasil diatur")),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+            child: Text("Set Lokasi",
+                style: TextStyle(color: Colors.white)),
+          ),
+          SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PilihKurirPage(),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            child: Text("Konfirmasi & Pilih Kurir",
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+
                 ],
               ),
             ),
@@ -190,6 +215,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
   Widget _buildInputBox(
     String hint,
     TextEditingController controller,
+    FocusNode focusNode,
     Function(LatLng) onSuggestionSelected,
   ) {
     return Container(
@@ -200,6 +226,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
       child: TypeAheadField<LocationSuggestion>(
         textFieldConfiguration: TextFieldConfiguration(
           controller: controller,
+          focusNode: focusNode,
           style: TextStyle(color: Colors.white),
           decoration: InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -243,7 +270,6 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
   }
 }
 
-/// Model suggestion untuk menyimpan hasil forward geocoding
 class LocationSuggestion {
   final String name;
   final LatLng coords;
