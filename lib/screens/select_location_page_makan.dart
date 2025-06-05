@@ -6,15 +6,16 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class LokasiPickerPage extends StatefulWidget {
+class LokasiPickermamPage extends StatefulWidget {
   final Map<String, dynamic> barangData;
-  LokasiPickerPage({required this.barangData});
+
+  LokasiPickermamPage({required this.barangData});
 
   @override
-  State<LokasiPickerPage> createState() => _LokasiPickerPageState();
+  State<LokasiPickermamPage> createState() => _LokasiPickermamPageState();
 }
 
-class _LokasiPickerPageState extends State<LokasiPickerPage> {
+class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
   final jemputController = TextEditingController();
   final antarController = TextEditingController();
   final jemputFocus = FocusNode();
@@ -25,8 +26,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
 
   Future<String> getAddressFromLatLng(LatLng latLng) async {
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latLng.latitude}&lon=${latLng.longitude}',
-    );
+        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latLng.latitude}&lon=${latLng.longitude}');
     try {
       final response = await http.get(url, headers: {'User-Agent': 'misi_paket_app'});
       if (response.statusCode == 200) {
@@ -39,8 +39,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
 
   Future<List<LocationSuggestion>> fetchLocationSuggestions(String query) async {
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5',
-    );
+        'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5');
     final response = await http.get(url, headers: {'User-Agent': 'misi_paket_app'});
     if (response.statusCode == 200) {
       final List raw = jsonDecode(response.body);
@@ -87,9 +86,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
               ),
             ],
           ),
-
           Center(child: Icon(Icons.location_on, size: 40, color: Colors.orange)),
-
           Positioned(
             top: 60,
             left: 20,
@@ -129,7 +126,6 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
               ),
             ),
           ),
-
           Positioned(
             bottom: 20,
             left: 20,
@@ -190,7 +186,6 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                             SizedBox(height: 8),
                             ElevatedButton(
                               onPressed: () {
-                                // Navigasi ke PilihKurirPage, kirim data barang + lokasi jemput dan antar
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -207,7 +202,8 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                               ),
-                              child: Text("Konfirmasi & Pilih Kurir", style: TextStyle(color: Colors.white)),
+                              child: Text("Konfirmasi & Pilih Kurir",
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),

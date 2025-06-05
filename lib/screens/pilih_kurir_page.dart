@@ -1,148 +1,149 @@
 import 'package:flutter/material.dart';
+import 'package:misi_paket/screens/confirmpage.dart';
 
 class PilihKurirPage extends StatelessWidget {
+  final Map<String, dynamic> barangData;
+  PilihKurirPage({required this.barangData});
+
   final List<Map<String, dynamic>> kurirList = [
     {
-      "name": "John Doe",
-      "phone": "0823 1283 1238",
-      "status": "available",
-      "photo": "https://via.placeholder.com/150" // bisa diganti asset
+      'name': 'Jude Bellingham',
+      'phone': '0812 3456 7890',
+      'status': 'green',
     },
     {
-      "name": "John Doe",
-      "phone": "0823 1283 1238",
-      "status": "available",
-      "photo": "https://via.placeholder.com/150"
+      'name': 'Vinicius Jr.',
+      'phone': '0813 9876 5432',
+      'status': 'yellow',
     },
     {
-      "name": "John Doe",
-      "phone": "0823 1283 1238",
-      "status": "onwork",
-      "photo": "https://via.placeholder.com/150"
+      'name': 'Luka Modrić',
+      'phone': '0821 7654 3210',
+      'status': 'red',
     },
     {
-      "name": "John Doe",
-      "phone": "0823 1283 1238",
-      "status": "onwork",
-      "photo": "https://via.placeholder.com/150"
+      'name': 'Toni Kroos',
+      'phone': '0823 1283 1238',
+      'status': 'red',
     },
     {
-      "name": "John Doe",
-      "phone": "0823 1283 1238",
-      "status": "off",
-      "photo": "https://via.placeholder.com/150"
+      'name': 'Rodrygo Goes',
+      'phone': '0822 1122 3344',
+      'status': 'dark',
     },
   ];
 
-  Color _getStatusColor(String status) {
+  Color getStatusColor(String status) {
     switch (status) {
-      case 'available':
+      case 'green':
         return Colors.green;
-      case 'onwork':
+      case 'yellow':
+        return Colors.yellow;
+      case 'red':
         return Colors.red;
-      case 'off':
-        return Colors.grey;
       default:
-        return Colors.grey;
+        return Colors.black12;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.orange, Colors.deepOrangeAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          child: Text(
-            "Pilih Kurir\nyang tersedia",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-          ),
-        ),
-        toolbarHeight: 140,
-      ),
-      body: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        itemCount: kurirList.length,
-        itemBuilder: (context, index) {
-          final kurir = kurirList[index];
-          final statusColor = _getStatusColor(kurir['status']);
-
-          return Container(
-            margin: EdgeInsets.only(bottom: 12),
+      body: Column(
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20, 50, 20, 30),
             decoration: BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
+              gradient: LinearGradient(
+                colors: [Colors.orange.shade700, Colors.orange.shade300],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
             ),
-            child: Row(
-              children: [
-                // Profile Picture
-                Container(
-                  margin: EdgeInsets.all(12),
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(kurir['photo']),
-                      fit: BoxFit.cover,
+            child: Text(
+              "Pilih Kurir\nyang tersedia",
+              style: TextStyle(
+                fontSize: 24,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          // List Kurir
+          Expanded(
+            child: ListView.builder(
+              itemCount: kurirList.length,
+              itemBuilder: (context, index) {
+                final kurir = kurirList[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ConfirmPage(
+                          fullData: {
+                            ...barangData,
+                            'kurir': kurir['name'],
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(2, 4),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            child: Icon(Icons.person, color: Colors.orange),
+                          ),
+                          title: Text(
+                            kurir['name'],
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          subtitle: Text(
+                            kurir['phone'],
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: getStatusColor(kurir['status']),
+                            borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(16),
+                            ),
+                          ),
+                        )
+                      ],
                     ),
                   ),
-                ),
-                // Name & Phone
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kurir['name'],
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        kurir['phone'],
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-            // Status Strip
-            foregroundDecoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: statusColor, width: 10),
-              ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-            ),
-          );
-        },
+          ),
+        ],
       ),
+
+      // Bottom Nav
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
+        currentIndex: 0,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: "Order"),

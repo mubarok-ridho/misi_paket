@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:misi_paket/screens/barang_order_form.dart';
+import 'package:misi_paket/screens/makanan_order_form.dart';
 
 class CustomerDashboard extends StatefulWidget {
   @override
@@ -134,11 +135,18 @@ class HomeTab extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => BarangOrderForm()),
+                      MaterialPageRoute(builder: (_) => FormAwalPage()),
                     );
                   }),
               SizedBox(height: 16),
-              MenuButton(label: "Pengantaran Makanan", onTap: () {}),
+              MenuButton(
+                  label: "Pengantaran Makanan",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => FormAwalmamPage()),
+                    );
+                  }),
               SizedBox(height: 16),
               MenuButton(label: "Pengantaran Penumpang", onTap: () {}),
             ],

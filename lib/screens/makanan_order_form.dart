@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:misi_paket/screens/select_location_page.dart';
+import 'package:misi_paket/screens/select_location_page_makan.dart';
 
-class FormAwalPage extends StatefulWidget {
+class FormAwalmamPage extends StatefulWidget {
   @override
   _FormAwalPageState createState() => _FormAwalPageState();
 }
 
-class _FormAwalPageState extends State<FormAwalPage> {
+class _FormAwalPageState extends State<FormAwalmamPage> {
   final namaController = TextEditingController();
-  final panjangController = TextEditingController();
-  final lebarController = TextEditingController();
-  final tinggiController = TextEditingController();
   final catatanController = TextEditingController();
 
   int currentIndex = 0;
@@ -30,7 +28,8 @@ class _FormAwalPageState extends State<FormAwalPage> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: "Order"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.local_shipping), label: "Order"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -43,23 +42,11 @@ class _FormAwalPageState extends State<FormAwalPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel("Nama barang"),
-                  _buildTextField(namaController, "Contoh: Sepatu"),
-                  SizedBox(height: 16),
-                  _buildLabel("Dimensi barang"),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(child: _buildTextField(panjangController, "P")),
-                      SizedBox(width: 8),
-                      Expanded(child: _buildTextField(lebarController, "L")),
-                      SizedBox(width: 8),
-                      Expanded(child: _buildTextField(tinggiController, "T")),
-                    ],
-                  ),
+                  _buildLabel("Nama Makanan"),
+                  _buildTextField(namaController, "Contoh: Soto Lamongan"),
                   SizedBox(height: 16),
                   _buildLabel("Tambahkan catatan"),
-                  _buildTextField(catatanController, "Contoh: Fragile"),
+                  _buildTextField(catatanController, "Contoh: Extra Pedas"),
                   SizedBox(height: 24),
                   Center(
                     child: ElevatedButton(
@@ -67,11 +54,10 @@ class _FormAwalPageState extends State<FormAwalPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => LokasiPickerPage(
+                            builder: (_) => LokasiPickermamPage(
+                              // <-- pakai nama class yang benar
                               barangData: {
                                 'namaBarang': namaController.text,
-                                'ukuran':
-                                    "${panjangController.text}x${lebarController.text}x${tinggiController.text}",
                                 'catatan': catatanController.text,
                               },
                             ),
@@ -83,7 +69,8 @@ class _FormAwalPageState extends State<FormAwalPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                       ),
                       child: Text("Submit", style: TextStyle(fontSize: 16)),
                     ),
