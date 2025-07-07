@@ -1,19 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:misi_paket/screens/select_location_page.dart';
-import 'package:misi_paket/screens/select_location_page_makan.dart';
+import 'package:misi_paket/bloc/order_bloc/order_bloc.dart';
+import 'package:misi_paket/bloc/order_bloc/order_event.dart';
+import 'package:misi_paket/screens/User_Customer/select_location_page.dart';
 
 class FormAwalmamPage extends StatefulWidget {
+  const FormAwalmamPage({super.key});
+
   @override
-  _FormAwalPageState createState() => _FormAwalPageState();
+  State<FormAwalmamPage> createState() => _FormAwalmamPageState();
 }
 
-class _FormAwalPageState extends State<FormAwalmamPage> {
+class _FormAwalmamPageState extends State<FormAwalmamPage> {
   final namaController = TextEditingController();
   final catatanController = TextEditingController();
 
   int currentIndex = 0;
+
+  void _submit() {
+    final namaMakanan = namaController.text;
+    final catatan = catatanController.text;
+
+    if (namaMakanan.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nama makanan tidak boleh kosong")),
+      );
+      return;
+    }
+
+    context.read<OrderBloc>().add(SetMakananEvent(
+      namaMakanan: namaMakanan,
+      catatanMakanan: catatan,
+    ));
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LokasiPickerPage(role: 'makanan'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,15 +48,12 @@ class _FormAwalPageState extends State<FormAwalmamPage> {
       backgroundColor: Colors.white,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
-        onTap: (index) {
-          setState(() => currentIndex = index);
-        },
+        onTap: (index) => setState(() => currentIndex = index),
         selectedItemColor: Colors.deepOrange,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.local_shipping), label: "Order"),
+          BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: "Order"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -44,35 +68,19 @@ class _FormAwalPageState extends State<FormAwalmamPage> {
                 children: [
                   _buildLabel("Nama Makanan"),
                   _buildTextField(namaController, "Contoh: Soto Lamongan"),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   _buildLabel("Tambahkan catatan"),
                   _buildTextField(catatanController, "Contoh: Extra Pedas"),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   Center(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LokasiPickermamPage(
-                              // <-- pakai nama class yang benar
-                              barangData: {
-                                'namaBarang': namaController.text,
-                                'catatan': catatanController.text,
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                      onPressed: _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepOrange,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                       ),
-                      child: Text("Submit", style: TextStyle(fontSize: 16)),
+                      child: const Text("Lanjut Pilih Lokasi", style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],
@@ -88,16 +96,16 @@ class _FormAwalPageState extends State<FormAwalmamPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.deepOrange, Colors.orangeAccent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       child: Text(
-        "Pengantaran\nBarang",
+        "Pengantaran\nMakanan",
         style: GoogleFonts.poppins(
           fontSize: 28,
           fontWeight: FontWeight.bold,

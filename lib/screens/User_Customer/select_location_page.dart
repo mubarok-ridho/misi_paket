@@ -1,32 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:misi_paket/bloc/order_bloc/order_bloc.dart';
+import 'package:misi_paket/bloc/order_bloc/order_event.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'pilih_kurir_page.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class LokasiPickermamPage extends StatefulWidget {
-  final Map<String, dynamic> barangData;
-
-  LokasiPickermamPage({required this.barangData});
+class LokasiPickerPage extends StatefulWidget {
+  final String role;
+  const LokasiPickerPage({Key? key, required this.role}) : super(key: key);
 
   @override
-  State<LokasiPickermamPage> createState() => _LokasiPickermamPageState();
+  _LokasiPickerPageState createState() => _LokasiPickerPageState();
 }
 
-class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
+class _LokasiPickerPageState extends State<LokasiPickerPage> {
+  LatLng center = LatLng(-6.200000, 106.816666);
   final jemputController = TextEditingController();
   final antarController = TextEditingController();
   final jemputFocus = FocusNode();
   final antarFocus = FocusNode();
-  final MapController mapController = MapController();
-  LatLng center = LatLng(-6.2, 106.8);
+  final mapController = MapController();
   bool isLoading = false;
+
+  FocusNode? lastFocus;
 
   Future<String> getAddressFromLatLng(LatLng latLng) async {
     final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latLng.latitude}&lon=${latLng.longitude}');
+      'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latLng.latitude}&lon=${latLng.longitude}',
+    );
     try {
       final response = await http.get(url, headers: {'User-Agent': 'misi_paket_app'});
       if (response.statusCode == 200) {
@@ -39,7 +43,8 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
 
   Future<List<LocationSuggestion>> fetchLocationSuggestions(String query) async {
     final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5');
+      'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5',
+    );
     final response = await http.get(url, headers: {'User-Agent': 'misi_paket_app'});
     if (response.statusCode == 200) {
       final List raw = jsonDecode(response.body);
@@ -84,9 +89,25 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
                 subdomains: ['a', 'b', 'c'],
                 userAgentPackageName: 'com.example.misi_paket',
               ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: center,
+                    width: 40,
+                    height: 40,
+                    child: const Icon(
+                      Icons.location_pin,
+                      size: 40,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
+
           Center(child: Icon(Icons.location_on, size: 40, color: Colors.orange)),
+
           Positioned(
             top: 60,
             left: 20,
@@ -100,7 +121,7 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
               child: Column(
                 children: [
                   _buildInputBox(
-                    "Lokasi jemput paket kamu",
+                    "Lokasi jemput",
                     jemputController,
                     jemputFocus,
                     (coords) {
@@ -108,11 +129,12 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
                         center = coords;
                       });
                       mapController.move(coords, 15);
+                      lastFocus = jemputFocus;
                     },
                   ),
                   SizedBox(height: 10),
                   _buildInputBox(
-                    "Lokasi antar paket kamu",
+                    "Lokasi antar",
                     antarController,
                     antarFocus,
                     (coords) {
@@ -120,12 +142,14 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
                         center = coords;
                       });
                       mapController.move(coords, 15);
+                      lastFocus = antarFocus;
                     },
                   ),
                 ],
               ),
             ),
           ),
+
           Positioned(
             bottom: 20,
             left: 20,
@@ -162,9 +186,9 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
                                 final alamat = await getAddressFromLatLng(center);
                                 setState(() => isLoading = false);
 
-                                if (jemputFocus.hasFocus) {
+                                if (lastFocus == jemputFocus) {
                                   jemputController.text = alamat;
-                                } else if (antarFocus.hasFocus) {
+                                } else if (lastFocus == antarFocus) {
                                   antarController.text = alamat;
                                 } else {
                                   if (jemputController.text.isEmpty) {
@@ -185,25 +209,37 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
                             ),
                             SizedBox(height: 8),
                             ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PilihKurirPage(
-                                      barangData: {
-                                        ...widget.barangData,
-                                        'lokasiJemput': jemputController.text,
-                                        'lokasiAntar': antarController.text,
-                                      },
-                                    ),
-                                  ),
-                                );
+                              onPressed: () async {
+                                final alamat = await getAddressFromLatLng(center);
+
+                                if (widget.role == 'dashboard') {
+                                  Navigator.pop(context, {
+                                    'address': alamat,
+                                    'latlng': center,
+                                  });
+                                } else {
+                                  context.read<OrderBloc>().add(SetLokasiEvent(
+                                    role: widget.role,
+                                    alamatJemput: jemputController.text,
+                                    lokasiJemput: center,
+                                    alamatAntar: antarController.text,
+                                    lokasiAntar: center,
+                                  ));
+
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/pilih_kurir',
+                                    arguments: widget.role,
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                               ),
-                              child: Text("Konfirmasi & Pilih Kurir",
-                                  style: TextStyle(color: Colors.white)),
+                              child: Text(
+                                widget.role == 'dashboard' ? "Simpan Lokasi" : "Konfirmasi & Pilih Kurir",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         ),
@@ -211,14 +247,6 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
               ),
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: "Order"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
@@ -257,8 +285,8 @@ class _LokasiPickermamPageState extends State<LokasiPickermamPage> {
           );
         },
         onSuggestionSelected: (suggestion) {
-          controller.text = suggestion.displayName;
           onSuggestionSelected(suggestion.coordinates);
+          lastFocus = focusNode;
           FocusScope.of(context).unfocus();
         },
         suggestionsBoxDecoration: SuggestionsBoxDecoration(

@@ -1,19 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:misi_paket/screens/customer.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(MyApp());
-}
-class Login extends StatelessWidget {
-  const Login({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: LoginPage(),
-    );
-  }
-}
+import 'package:misi_paket/screens/User_Courrier/courier.dart';
+import 'package:misi_paket/screens/User_Customer/customer.dart';
+import 'package:misi_paket/screens/User_Superadmin/order.dart';
+import 'register.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,10 +16,206 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController passCtrl = TextEditingController();
+  bool isLoading = false;
+  bool showPassword = false;
+  String? errorMsg;
+
+  Future<void> _login() async {
+    final email = emailCtrl.text.trim();
+    final pass = passCtrl.text.trim();
+
+    if (email.isEmpty || pass.isEmpty) {
+      setState(() => errorMsg = "Email dan password wajib diisi");
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMsg = null;
+    });
+
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost:8080/login"),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': pass}),
+      );
+
+      final data = jsonDecode(res.body);
+      setState(() => isLoading = false);
+
+      if (res.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setInt('userId', data['user']['id']);
+
+        final role = data['user']['role'];
+        if (role == "customer") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CustomerDashboard()));
+        } else if (role == "kurir") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CourierDashboard()));
+        } else if (role == "admin") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminDashboard()));
+        } else {
+          setState(() => errorMsg = "Role tidak dikenali");
+        }
+      } else {
+        setState(() => errorMsg = data['error'] ?? "Login gagal");
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMsg = "Gagal terhubung ke server";
+      });
+    }
+  }
+
+  InputDecoration _inputDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.grey),
+        filled: true,
+        fillColor: const Color(0xFF2D2F36),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // 🔶 HEADER: Gradient + Logo
+            Container(
+              height: 250,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.deepOrange, Colors.orangeAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+              ),
+              child: Center(
+                child: Image.asset('lib/assets/Logo.png', height: 120),
+              ),
+            ),
+
+            // 🔶 FORM CARD
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Log In",
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange)),
+                    const SizedBox(height: 24),
+
+                    const Text("Email", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: emailCtrl,
+                      decoration: _inputDecoration("Masukkan email"),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+
+                    const SizedBox(height: 16),
+                    const Text("Password", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: passCtrl,
+                      obscureText: !showPassword,
+                      decoration: _inputDecoration("Masukkan password").copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off, color: Colors.orange),
+                          onPressed: () => setState(() => showPassword = !showPassword),
+                        ),
+                      ),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, "/change-password");
+                        },
+                        child: const Text("Lupa Password?", style: TextStyle(color: Colors.deepOrange)),
+                      ),
+                    ),
+
+                    if (errorMsg != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(errorMsg!, style: const TextStyle(color: Colors.red)),
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    // ✅ LOGIN BUTTON DITENGAHKAN
+                    Center(
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2D2F36),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                          child: isLoading
+                              ? const CircularProgressIndicator(color: Colors.orange)
+                              : const Text("Log In",
+                                  style: TextStyle(
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Belum punya akun?"),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage()));
+                          },
+                          child: const Text("Daftar di sini",
+                              style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 }
