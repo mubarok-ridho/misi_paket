@@ -41,24 +41,6 @@
 
 ---
 
-## 🗂️ Project Structure
-
-📦 fai_express/
-├── lib/
-│ ├── blocs/
-│ ├── models/
-│ ├── screens/
-│ ├── services/
-│ └── main.dart
-├── backend/
-│ ├── controllers/
-│ ├── models/
-│ ├── routes/
-│ └── main.go
-
-
----
-
 ## 🚧 Development Progress
 
 - ✅ Goods & food order forms
