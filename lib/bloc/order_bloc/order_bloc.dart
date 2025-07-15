@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 import 'order_event.dart';
 import 'order_state.dart';
 
@@ -76,16 +78,56 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         emit(currentState.copyWith(
           namaKurir: event.namaKurir,
           noHpKurir: event.noHpKurir,
-          kurirId: event.kurirId, // ← Tambahkan ini
-
+          kurirId: event.kurirId,
         ));
       } else {
         emit(OrderLoadedState(
           namaKurir: event.namaKurir,
           noHpKurir: event.noHpKurir,
-          kurirId: event.kurirId, // ← Tambahkan ini
-
+          kurirId: event.kurirId,
         ));
+      }
+    });
+
+    on<SubmitOrderEvent>((event, emit) async {
+      final currentState = state;
+      if (currentState is! OrderLoadedState) return;
+
+      try {
+        final body = {
+          "layanan": event.layanan,
+          "customer_id": event.customerId,
+          "alamat_jemput": currentState.alamatJemput,
+          "alamat_antar": currentState.alamatAntar,
+          "lat_jemput": currentState.lokasiJemput?.latitude,
+          "lng_jemput": currentState.lokasiJemput?.longitude,
+          "lat_antar": currentState.lokasiAntar?.latitude,
+          "lng_antar": currentState.lokasiAntar?.longitude,
+          "kurir_id": currentState.kurirId,
+          "nama_barang": currentState.namaBarang,
+          "catatan_barang": currentState.catatanBarang,
+          "ukuran": currentState.ukuran,
+          "nama_makanan": currentState.namaMakanan,
+          "catatan_makanan": currentState.catatanMakanan,
+          "nama_penumpang": currentState.namaPenumpang,
+          "tujuan": currentState.tujuan,
+        };
+
+        final response = await http.post(
+          Uri.parse("http://localhost:8080/orders"), // Ganti dengan URL kamu
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(body),
+        );
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          // Sukses kirim order
+          print("✅ Order berhasil dibuat!");
+          emit(OrderInitial()); // Reset state jika perlu
+        } else {
+          print("❌ Gagal submit order: ${response.body}");
+        }
+      } catch (e) {
+        print("❌ Error saat submit order: $e");
       }
     });
   }

@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:local_auth/local_auth.dart';
 
 import 'package:misi_paket/screens/User_Courrier/courier.dart';
 import 'package:misi_paket/screens/User_Customer/customer.dart';
-import 'package:misi_paket/screens/User_Superadmin/order.dart';
+import 'package:misi_paket/screens/User_Admin/admin_main_page.dart';
 import 'register.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,18 +17,19 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController identifierCtrl = TextEditingController();
   final TextEditingController passCtrl = TextEditingController();
   bool isLoading = false;
   bool showPassword = false;
   String? errorMsg;
+  final LocalAuthentication auth = LocalAuthentication();
 
   Future<void> _login() async {
-    final email = emailCtrl.text.trim();
+    final identifier = identifierCtrl.text.trim();
     final pass = passCtrl.text.trim();
 
-    if (email.isEmpty || pass.isEmpty) {
-      setState(() => errorMsg = "Email dan password wajib diisi");
+    if (identifier.isEmpty || pass.isEmpty) {
+      setState(() => errorMsg = "Email / Nomor dan password wajib diisi");
       return;
     }
 
@@ -40,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
       final res = await http.post(
         Uri.parse("http://localhost:8080/login"),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': pass}),
+        body: jsonEncode({'email': identifier, 'password': pass}), // Kirim ke backend
       );
 
       final data = jsonDecode(res.body);
@@ -57,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
         } else if (role == "kurir") {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CourierDashboard()));
         } else if (role == "admin") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminDashboard()));
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminMainPage()));
         } else {
           setState(() => errorMsg = "Role tidak dikenali");
         }
@@ -69,6 +71,21 @@ class _LoginPageState extends State<LoginPage> {
         isLoading = false;
         errorMsg = "Gagal terhubung ke server";
       });
+    }
+  }
+
+  Future<void> _loginWithBiometric() async {
+    try {
+      final didAuthenticate = await auth.authenticate(
+        localizedReason: 'Gunakan sidik jari untuk login',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+
+      if (didAuthenticate) {
+        _login(); // Opsional: bisa disimpan token terakhir dan login otomatis
+      }
+    } catch (e) {
+      setState(() => errorMsg = "Gagal autentikasi biometrik");
     }
   }
 
@@ -90,7 +107,6 @@ class _LoginPageState extends State<LoginPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 🔶 HEADER: Gradient + Logo
             Container(
               height: 250,
               width: double.infinity,
@@ -107,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // 🔶 FORM CARD
+            // 🔶 FORM
             Padding(
               padding: const EdgeInsets.all(24),
               child: Container(
@@ -116,11 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    )
+                    BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -130,30 +142,56 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange)),
                     const SizedBox(height: 24),
 
-                    const Text("Email", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    const Text("Email / Nomor Telepon",
+                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     TextField(
-                      controller: emailCtrl,
-                      decoration: _inputDecoration("Masukkan email"),
+                      controller: identifierCtrl,
+                      decoration: _inputDecoration("Masukkan email atau nomor telepon"),
                       style: const TextStyle(color: Colors.white),
                     ),
 
                     const SizedBox(height: 16),
-                    const Text("Password", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    const Text("Password",
+                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
-                    TextField(
-                      controller: passCtrl,
-                      obscureText: !showPassword,
-                      decoration: _inputDecoration("Masukkan password").copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off, color: Colors.orange),
-                          onPressed: () => setState(() => showPassword = !showPassword),
+
+                    // 🔒 Password + Fingerprint
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: TextField(
+                            controller: passCtrl,
+                            obscureText: !showPassword,
+                            decoration: _inputDecoration("Masukkan password").copyWith(
+                              suffixIcon: IconButton(
+                                icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off,
+                                    color: Colors.orange),
+                                onPressed: () => setState(() => showPassword = !showPassword),
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
-                      ),
-                      style: const TextStyle(color: Colors.white),
+                        const SizedBox(width: 8),
+                        Container(
+                          height: 50,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2D2F36),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.fingerprint, color: Colors.orange, size: 28),
+                            onPressed: _loginWithBiometric,
+                          ),
+                        ),
+                      ],
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -171,8 +209,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
 
                     const SizedBox(height: 12),
-
-                    // ✅ LOGIN BUTTON DITENGAHKAN
                     Center(
                       child: SizedBox(
                         width: double.infinity,
@@ -186,10 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: isLoading
                               ? const CircularProgressIndicator(color: Colors.orange)
                               : const Text("Log In",
-                                  style: TextStyle(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
+                                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                     ),
@@ -202,7 +235,8 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(width: 4),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage()));
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (_) => const RegisterPage()));
                           },
                           child: const Text("Daftar di sini",
                               style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
@@ -212,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

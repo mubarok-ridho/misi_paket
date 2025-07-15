@@ -1,9 +1,51 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:misi_paket/screens/User_Courrier/kurirchatpage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OrderDetailKurirPage extends StatelessWidget {
   final Map<String, dynamic> order;
 
   const OrderDetailKurirPage({super.key, required this.order});
+
+  Future<void> completeOrder(BuildContext context) async {
+    final url = Uri.parse(
+        "http://localhost:8080/api/orders/status");
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "id": order['id'],
+          "status": "selesai",
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Pesanan berhasil diselesaikan")),
+        );
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("❌ Gagal menyelesaikan pesanan: ${response.body}")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error: $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,11 +56,12 @@ class OrderDetailKurirPage extends StatelessWidget {
             : 'Catatan';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: const Color(0xFF24313F),
       appBar: AppBar(
         title: const Text('Detail Pesanan'),
         centerTitle: true,
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: const Color(0xFF334856),
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -28,40 +71,23 @@ class OrderDetailKurirPage extends StatelessWidget {
           children: [
             headerCard(order),
             const SizedBox(height: 24),
-            detailTile(Icons.person, "Nama Customer", order['nama_customer'] ?? "-"),
-            detailTile(Icons.local_shipping, "Layanan", order['layanan'] ?? "-"),
-            detailTile(Icons.inventory, itemLabel, order['catatan'] ?? "-"),
-            detailTile(Icons.location_pin, "Alamat Jemput", order['alamat_jemput'] ?? "-"),
-            detailTile(Icons.flag, "Alamat Antar", order['alamat_antar'] ?? "-"),
+            detailTile(
+                Icons.person, "Nama Customer", order['nama_customer'] ?? "-"),
+            detailTile(
+                Icons.local_shipping, "Layanan", order['layanan'] ?? "-"),
+            detailTile(Icons.inventory, itemLabel, order['nama_order'] ?? "-"),
+            detailTile(Icons.location_pin, "Alamat Jemput",
+                order['alamat_jemput'] ?? "-"),
+            detailTile(
+                Icons.flag, "Alamat Antar", order['alamat_antar'] ?? "-"),
             const SizedBox(height: 28),
+
+            // ✅ Tombol Selesaikan Pesanan
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Navigasi ke Google Maps atau tampilan peta
-                    },
-                    icon: const Icon(Icons.location_on),
-                    label: const Text("Menuju Lokasi Antar"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Logika menyelesaikan pesanan
-                    },
+                    onPressed: () => completeOrder(context),
                     icon: const Icon(Icons.check_circle),
                     label: const Text("Selesaikan Pesanan"),
                     style: ElevatedButton.styleFrom(
@@ -70,23 +96,33 @@ class OrderDetailKurirPage extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
             Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  // TODO: Navigasi ke halaman chat
-                },
-                icon: const Icon(Icons.chat, color: Colors.deepOrange),
-                label: const Text("Buka Chat",
-                    style: TextStyle(
-                        color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                child: TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatPageCourier(orderId: order['id'].toString()),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.chat, color: Colors.orangeAccent),
+              label: const Text(
+                "Buka Chat",
+                style: TextStyle(
+                  color: Colors.orangeAccent,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            )
+            ))
           ],
         ),
       ),
@@ -97,13 +133,13 @@ class OrderDetailKurirPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: const Color(0xFF334856),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.orange.shade100,
-            blurRadius: 10,
-            offset: const Offset(0, 6),
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -111,7 +147,7 @@ class OrderDetailKurirPage extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 28,
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: Colors.orange,
             child: Icon(Icons.receipt_long, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 16),
@@ -120,18 +156,18 @@ class OrderDetailKurirPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text("Pesanan ID",
-                    style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    style: TextStyle(fontSize: 13, color: Colors.white70)),
                 Text(
                   "#${order['id']}",
                   style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange),
+                      color: Colors.orange),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   order['layanan'] ?? "-",
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
               ],
             ),
@@ -146,11 +182,11 @@ class OrderDetailKurirPage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF334856),
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black26,
             blurRadius: 5,
             offset: Offset(0, 3),
           )
@@ -159,7 +195,7 @@ class OrderDetailKurirPage extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.deepOrange),
+          Icon(icon, color: Colors.orangeAccent),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -167,13 +203,17 @@ class OrderDetailKurirPage extends StatelessWidget {
               children: [
                 Text(title,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Colors.grey)),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Colors.white70,
+                    )),
                 const SizedBox(height: 4),
                 Text(value,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500)),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    )),
               ],
             ),
           )

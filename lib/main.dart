@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:misi_paket/bloc/order_bloc/order_bloc.dart';
-import 'package:misi_paket/screens/User_Customer/PesananDiprosesPage.dart';
 import 'package:misi_paket/screens/User_Customer/confirmpage.dart';
+import 'package:misi_paket/screens/User_Customer/order_model.dart';
+import 'package:misi_paket/screens/User_Customer/pesananDiprosesPage.dart';
 import 'package:misi_paket/screens/change_password_page.dart';
 import 'package:misi_paket/screens/login.dart';
 import 'package:misi_paket/screens/User_Customer/pilih_kurir_page.dart';
 import 'package:misi_paket/screens/User_Customer/select_location_page.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 void main() {
   runApp(BlocProvider(
@@ -42,8 +45,11 @@ class MyApp extends StatelessWidget {
           final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'barang';
           return ConfirmPage(role: role);
         },
+      '/pesanan-diproses': (context) {
+        final order = ModalRoute.of(context)!.settings.arguments as OrderSummary;
+        return PesananDiprosesPage(order: order);
+      },
 
-        '/pesanan-diproses': (context) => const PesananDiprosesPage(),
         '/change-password': (context) => ChangePasswordPage(),
       },
     );

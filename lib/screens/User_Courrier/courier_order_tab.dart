@@ -24,76 +24,89 @@ class _CourierOrderTabState extends State<CourierOrderTab> {
     fetchOrders();
   }
 
-Future<void> fetchOrders() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  Future<void> fetchOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-  try {
-    final url = Uri.parse("http://localhost:8080/api/kurir/${widget.kurirId}/orders");
-    final response = await http.get(
-      url,
-      headers: {
-        "Authorization": "Bearer $token",
-      },
-    );
+    try {
+      final url = Uri.parse(
+          "http://localhost:8080/api/kurir/${widget.kurirId}/orders");
+      final response = await http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $token",
+        },
+      );
 
-    if (response.statusCode == 200) {
-      setState(() {
-        orders = jsonDecode(response.body);
-        isLoading = false;
-      });
-    } else {
-      print("❌ Gagal ambil order: ${response.statusCode} ${response.body}");
+      if (response.statusCode == 200) {
+        setState(() {
+          orders = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        print("❌ Gagal ambil order: ${response.statusCode} ${response.body}");
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("❌ Error: $e");
       setState(() => isLoading = false);
     }
-  } catch (e) {
-    print("❌ Error: $e");
-    setState(() => isLoading = false);
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Pesanan Masuk",
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  if (orders.isEmpty)
-                    const Text("Belum ada pesanan aktif."),
-                  ...orders.map((order) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OrderDetailKurirPage(order: order),
+    return Scaffold(
+      backgroundColor: const Color(0xFF24313F),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.orange),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Pesanan Masuk",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (orders.isEmpty)
+                      const Text(
+                        "Belum ada pesanan aktif.",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ...orders.map((order) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  OrderDetailKurirPage(order: order),
+                            ),
+                          );
+                        },
+                        child: OrderCard(
+                          orderId: "#${order['id']}",
+                          type: order['layanan'] ?? "-",
+                          customerName: order['nama_customer'] ?? "-",
+                          pickup: order['alamat_jemput'] ?? '-',
+                          destination: order['alamat_antar'] ?? '-',
+                          distance: "-", // opsional
+                          status: order['status'] ?? '-',
+                          statusColor: getStatusColor(order['status']),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
         ),
-      );
-    },
-    child: OrderCard(
-      orderId: "#${order['id']}",
-      type: order['layanan'] ?? "-",
-      customerName: order['nama_customer'] ?? "-",
-      pickup: order['alamat_jemput'] ?? '-',
-      destination: order['alamat_antar'] ?? '-',
-      distance: "-", // opsional
-      status: order['status'] ?? '-',
-      statusColor: getStatusColor(order['status']),
-    ),
-  );
-}).toList(),
-
-                ],
-              ),
       ),
     );
   }

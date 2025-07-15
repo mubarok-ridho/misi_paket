@@ -61,7 +61,7 @@ class SetLokasiEvent extends OrderEvent {
   final LatLng? lokasiAntar;
   final String? alamatAntar;
 
-  SetLokasiEvent({
+const SetLokasiEvent({
     required this.lokasiJemput,
     required this.alamatJemput,
     this.lokasiAntar,
@@ -71,6 +71,21 @@ class SetLokasiEvent extends OrderEvent {
   @override
   List<Object?> get props => [lokasiJemput, alamatJemput, lokasiAntar, alamatAntar];
 }
+
+class SubmitOrderEvent extends OrderEvent {
+  final String layanan;
+  final int customerId;
+
+  const SubmitOrderEvent({
+    required this.layanan,
+    required this.customerId,
+  });
+
+  @override
+  List<Object?> get props => [layanan, customerId];
+}
+
+
 // Kurir Event
 class SetKurirEvent extends OrderEvent {
   final String namaKurir;

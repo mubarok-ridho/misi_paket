@@ -18,6 +18,9 @@ class LokasiPickerPage extends StatefulWidget {
 
 class _LokasiPickerPageState extends State<LokasiPickerPage> {
   LatLng center = LatLng(-6.200000, 106.816666);
+  LatLng? lokasiJemput;
+  LatLng? lokasiAntar;
+
   final jemputController = TextEditingController();
   final antarController = TextEditingController();
   final jemputFocus = FocusNode();
@@ -91,16 +94,20 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
               ),
               MarkerLayer(
                 markers: [
-                  Marker(
-                    point: center,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_pin,
-                      size: 40,
-                      color: Colors.red,
+                  if (lokasiJemput != null)
+                    Marker(
+                      point: lokasiJemput!,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(Icons.location_on, size: 40, color: Colors.green),
                     ),
-                  ),
+                  if (lokasiAntar != null)
+                    Marker(
+                      point: lokasiAntar!,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(Icons.location_on, size: 40, color: Colors.red),
+                    ),
                 ],
               ),
             ],
@@ -126,6 +133,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                     jemputFocus,
                     (coords) {
                       setState(() {
+                        lokasiJemput = coords;
                         center = coords;
                       });
                       mapController.move(coords, 15);
@@ -139,6 +147,7 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                     antarFocus,
                     (coords) {
                       setState(() {
+                        lokasiAntar = coords;
                         center = coords;
                       });
                       mapController.move(coords, 15);
@@ -188,14 +197,10 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
 
                                 if (lastFocus == jemputFocus) {
                                   jemputController.text = alamat;
+                                  lokasiJemput = center;
                                 } else if (lastFocus == antarFocus) {
                                   antarController.text = alamat;
-                                } else {
-                                  if (jemputController.text.isEmpty) {
-                                    jemputController.text = alamat;
-                                  } else {
-                                    antarController.text = alamat;
-                                  }
+                                  lokasiAntar = center;
                                 }
 
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -209,38 +214,59 @@ class _LokasiPickerPageState extends State<LokasiPickerPage> {
                             ),
                             SizedBox(height: 8),
                             ElevatedButton(
-                              onPressed: () async {
-                                final alamat = await getAddressFromLatLng(center);
+  onPressed: () async {
+    if (widget.role == 'dashboard') {
+      final alamat = await getAddressFromLatLng(center);
+      Navigator.pop(context, {
+        'address': alamat,
+        'latlng': center,
+      });
+    } else {
+      // ✅ Validasi: lokasi jemput & antar harus dipilih
+      if (lokasiJemput == null || lokasiAntar == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Pilih dan set lokasi jemput & antar terlebih dahulu.")),
+        );
+        return;
+      }
 
-                                if (widget.role == 'dashboard') {
-                                  Navigator.pop(context, {
-                                    'address': alamat,
-                                    'latlng': center,
-                                  });
-                                } else {
-                                  context.read<OrderBloc>().add(SetLokasiEvent(
-                                    role: widget.role,
-                                    alamatJemput: jemputController.text,
-                                    lokasiJemput: center,
-                                    alamatAntar: antarController.text,
-                                    lokasiAntar: center,
-                                  ));
+      // ✅ Validasi: jemput & antar tidak boleh sama
+      if (lokasiJemput == lokasiAntar) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lokasi jemput dan antar tidak boleh sama.")),
+        );
+        return;
+      }
 
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/pilih_kurir',
-                                    arguments: widget.role,
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                              ),
-                              child: Text(
-                                widget.role == 'dashboard' ? "Simpan Lokasi" : "Konfirmasi & Pilih Kurir",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
+      // ✅ Lanjut ke proses normal
+      context.read<OrderBloc>().add(SetLokasiEvent(
+        role: widget.role,
+        alamatJemput: jemputController.text,
+        lokasiJemput: lokasiJemput!,
+        alamatAntar: antarController.text,
+        lokasiAntar: lokasiAntar!,
+      ));
+
+    print("Jemput: ${lokasiJemput!.latitude}, ${lokasiJemput!.longitude}");
+print("Antar : ${lokasiAntar!.latitude}, ${lokasiAntar!.longitude}"); 
+
+
+      Navigator.pushNamed(
+        context,
+        '/pilih_kurir',
+        arguments: widget.role,
+      );
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.green,
+  ),
+  child: Text(
+    widget.role == 'dashboard' ? "Simpan Lokasi" : "Konfirmasi & Pilih Kurir",
+    style: TextStyle(color: Colors.white),
+  ),
+),
+
                           ],
                         ),
                 ],

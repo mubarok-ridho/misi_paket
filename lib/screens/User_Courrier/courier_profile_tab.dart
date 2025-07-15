@@ -16,9 +16,7 @@ class CourierProfileTab extends StatelessWidget {
 
     final response = await http.get(
       Uri.parse('http://localhost:8080/api/kurir/$kurirId'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
@@ -35,15 +33,16 @@ class CourierProfileTab extends StatelessWidget {
       future: fetchKurirData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: Colors.orangeAccent));
         }
 
-        final kurir = snapshot.data;
+        final kurir = snapshot.data?['user'];
 
         return SafeArea(
-          child: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.all(16),
+          child: Container(
+            color: const Color(0xFF1F2A38),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   const CircleAvatar(
@@ -54,13 +53,19 @@ class CourierProfileTab extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     kurir?['name'] ?? 'Nama Kurir',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     "ID: KUR${kurir?['id'] ?? '---'}",
                     style: const TextStyle(color: Colors.grey),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
+
                   ProfileMenuItem(
                     icon: Icons.edit,
                     title: "Edit Profile",
@@ -84,8 +89,10 @@ class CourierProfileTab extends StatelessWidget {
                   ProfileMenuItem(
                     icon: Icons.logout,
                     title: "Keluar",
-                    onTap: () {
-                      // TODO: Implement logout
+                    onTap: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.clear(); // logout
+                      Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
                     },
                     isDestructive: true,
                   ),
