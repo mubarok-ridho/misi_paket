@@ -12,9 +12,10 @@ class CourierHomeTab extends StatefulWidget {
 }
 
 class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
-  bool isOnline = true;
   String kurirName = "Kurir";
   int selesaiHariIni = 0;
+  int prosesHariIni = 0;
+  int totalPendapatan = 0;
   List<dynamic> orders = [];
 
   int? kurirId;
@@ -48,102 +49,100 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
     kurirId = prefs.getInt('userId');
     token = prefs.getString('token');
 
-    await fetchKurirProfile();
-    await fetchOrdersForKurir();
-    await fetchCompletedOrdersToday();
+    if (kurirId != null && token != null) {
+      await Future.wait([
+        fetchKurirProfile(),
+        fetchOrdersProses(),
+        fetchOrdersSelesaiToday(),
+        fetchPendapatanToday(),
+      ]);
+    }
   }
 
   Future<void> fetchKurirProfile() async {
-    if (kurirId == null || token == null) return;
-
     try {
       final res = await http.get(
         Uri.parse("http://localhost:8080/api/kurir/$kurirId"),
         headers: {"Authorization": "Bearer $token"},
       );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final user = data['user'];
+        if (user != null && user['name'] != null) {
+          setState(() {
+            kurirName = user['name'];
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
+  Future<void> fetchOrdersProses() async {
+    try {
+      final res = await http.get(
+        Uri.parse("http://localhost:8080/api/kurir/$kurirId/orders/proses"),
+        headers: {"Authorization": "Bearer $token"},
+      );
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         setState(() {
-          kurirName = data['user']['name'];
-          isOnline = data['user']['status'] == 'online';
+          prosesHariIni = data.length;
+          orders = data;
         });
-      } else {
-        print("❌ Gagal ambil data kurir: ${res.body}");
       }
-    } catch (e) {
-      print("❌ Gagal ambil data kurir: $e");
-    }
+    } catch (_) {}
   }
 
-  Future<void> fetchOrdersForKurir() async {
-    if (kurirId == null || token == null) return;
-
+  Future<void> fetchOrdersSelesaiToday() async {
     try {
-      final response = await http.get(
-        Uri.parse("http://localhost:8080/api/kurir/$kurirId/orders"),
+      final res = await http.get(
+        Uri.parse("http://localhost:8080/api/kurir/$kurirId/orders/selesai/today"),
         headers: {"Authorization": "Bearer $token"},
       );
-
-      if (response.statusCode == 200) {
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
         setState(() {
-          orders = jsonDecode(response.body);
+          selesaiHariIni = data.length;
         });
-      } else {
-        print("❌ Gagal ambil data order: ${response.body}");
       }
-    } catch (e) {
-      print("❌ Error ambil order: $e");
-    }
+    } catch (_) {}
   }
 
-  Future<void> fetchCompletedOrdersToday() async {
-    setState(() {
-      selesaiHariIni = 4; // dummy
-    });
-  }
-
-  Future<void> _updateKurirStatus(bool online) async {
-    if (kurirId == null || token == null) return;
-
+  Future<void> fetchPendapatanToday() async {
     try {
-      final response = await http.put(
-        Uri.parse("http://localhost:8080/api/kurir/status"),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json"
-        },
-        body: jsonEncode({"id": kurirId, "status": online ? "online" : "offline"}),
+      final res = await http.get(
+        Uri.parse("http://localhost:8080/api/pendapatan/kurir/$kurirId/today"),
+        headers: {"Authorization": "Bearer $token"},
       );
-
-      if (response.statusCode == 200) {
-        print("✅ Status berhasil diupdate");
-      } else {
-        print("❌ Gagal update status: ${response.statusCode} ${response.body}");
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          totalPendapatan = (data['total_pendapatan'] as num).toInt();
+        });
       }
-    } catch (e) {
-      print("❌ Error update status: $e");
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF24313F),
+      backgroundColor: const Color(0xFF121212),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeaderCard(),
-              const SizedBox(height: 20),
-              _buildStatusCard(),
-              const SizedBox(height: 20),
-              _buildStatusSwitch(),
-              const SizedBox(height: 24),
-              _buildActivityList(),
-            ],
+        child: RefreshIndicator(
+          onRefresh: initPrefsAndFetch,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeaderCard(),
+                const SizedBox(height: 24),
+                _buildStatusCards(),
+                const SizedBox(height: 24),
+                _buildActivityList(),
+              ],
+            ),
           ),
         ),
       ),
@@ -152,47 +151,31 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
 
   Widget _buildHeaderCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF334856),
+        gradient: const LinearGradient(
+          colors: [Color.fromARGB(255, 135, 18, 18), Color.fromARGB(255, 131, 31, 31)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           const CircleAvatar(
-            backgroundColor: Colors.orange,
             radius: 30,
-            child: Icon(Icons.motorcycle, color: Colors.white, size: 28),
+            backgroundColor: Colors.white,
+            child: Icon(Icons.motorcycle, color: Color(0xFFE23D19), size: 28),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Hai, $kurirName",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-              Row(
-                children: [
-                  Icon(Icons.circle,
-                      color: isOnline ? Colors.green : Colors.red, size: 10),
-                  const SizedBox(width: 6),
-                  Text(
-                    isOnline ? "Online" : "Offline",
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isOnline ? Colors.green : Colors.red,
-              borderRadius: BorderRadius.circular(20),
-            ),
+          Expanded(
             child: Text(
-              isOnline ? "ONLINE" : "OFFLINE",
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+              "Hai, $kurirName",
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -200,61 +183,103 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
     );
   }
 
-  Widget _buildStatusCard() {
+  Widget _buildStatusCards() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            _buildSmallCard(
+              title: "Diproses",
+              value: "$prosesHariIni",
+              icon: Icons.timelapse,
+              bgColor: Color.fromARGB(255, 13, 99, 186),
+              iconColor: Color.fromARGB(255, 231, 104, 0),
+            ),
+            const SizedBox(width: 12),
+            _buildSmallCard(
+              title: "Selesai Hari Ini",
+              value: "$selesaiHariIni",
+              icon: Icons.check_circle,
+              bgColor: Color.fromARGB(255, 4, 94, 81),
+              iconColor: Color.fromARGB(255, 231, 104, 0),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildIncomeCard(),
+      ],
+    );
+  }
+
+  Widget _buildSmallCard({
+  required String title,
+  required String value,
+  required IconData icon,
+  required Color bgColor, // Tidak dipakai, tapi tetap disimpan kalau mau fleksibel
+  required Color iconColor,
+}) {
+  return Expanded(
+    child: Container(
+      padding: const EdgeInsets.all(2), // Border thickness
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFA726), Color(0xFFEF6C00)], // Oranye terang ke oranye gelap
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2C2C2C), // Abu tua
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 35),
+            const SizedBox(height: 6),
+            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+
+  Widget _buildIncomeCard() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF3E5568),
+        gradient: const LinearGradient(
+          colors: [Color.fromARGB(255, 11, 68, 53), Color.fromARGB(255, 16, 117, 158)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle, color: Colors.green, size: 32),
+          const Icon(Icons.attach_money, color: Colors.white, size: 30),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Pesanan Selesai Hari Ini",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
-              Text("$selesaiHariIni pesanan",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+              const Text("Pendapatan Hari Ini", style: TextStyle(color: Colors.white70)),
+              Text("Rp$totalPendapatan",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
             ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusSwitch() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF334856),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Status Kurir",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              Text(
-                isOnline
-                    ? "Anda sedang menerima pesanan"
-                    : "Tidak menerima pesanan",
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
-              ),
-            ],
-          ),
-          Switch(
-            value: isOnline,
-            onChanged: (value) async {
-              setState(() => isOnline = value);
-              await _updateKurirStatus(value);
-            },
-            activeColor: Colors.green,
           ),
         ],
       ),
@@ -270,12 +295,17 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
         const SizedBox(height: 12),
         if (orders.isEmpty)
           const Text("Belum ada aktivitas terkini.", style: TextStyle(color: Colors.white60)),
-        ...orders.take(3).map((order) {
+        ...orders.take(5).map((order) {
+          final customerName = order['nama_customer'] ?? 'Tidak diketahui';
+          final layanan = order['layanan'] ?? '-';
+          final layananFormatted = "Layanan ${capitalize(layanan)}";
+
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF334856),
+              color: const Color(0xFF1C1C1C),
+              border: Border.all(color: const Color(0xFFE23D19), width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -286,10 +316,9 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Pesanan #${order['id']}",
+                      Text("Customer: $customerName",
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      Text(order['layanan'] ?? "-",
-                          style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      Text(layananFormatted, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -299,5 +328,10 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
         }).toList(),
       ],
     );
+  }
+
+  String capitalize(String input) {
+    if (input.isEmpty) return input;
+    return input[0].toUpperCase() + input.substring(1);
   }
 }

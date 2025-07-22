@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:misi_paket/screens/User_Courrier/InputTagihanPage.dart';
 import 'package:misi_paket/screens/User_Courrier/kurirchatpage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,9 +11,7 @@ class OrderDetailKurirPage extends StatelessWidget {
   const OrderDetailKurirPage({super.key, required this.order});
 
   Future<void> completeOrder(BuildContext context) async {
-    final url = Uri.parse(
-        "http://localhost:8080/api/orders/status");
-
+    final url = Uri.parse("http://localhost:8080/api/orders/status");
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
@@ -36,8 +35,7 @@ class OrderDetailKurirPage extends StatelessWidget {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text("❌ Gagal menyelesaikan pesanan: ${response.body}")),
+          SnackBar(content: Text("❌ Gagal menyelesaikan pesanan: ${response.body}")),
         );
       }
     } catch (e) {
@@ -71,15 +69,10 @@ class OrderDetailKurirPage extends StatelessWidget {
           children: [
             headerCard(order),
             const SizedBox(height: 24),
-            detailTile(
-                Icons.person, "Nama Customer", order['nama_customer'] ?? "-"),
-            detailTile(
-                Icons.local_shipping, "Layanan", order['layanan'] ?? "-"),
+
+            detailTile(Icons.person, "Nama Customer", order['nama_customer'] ?? "-"),
+            detailTile(Icons.local_shipping, "Layanan", order['layanan'] ?? "-"),
             detailTile(Icons.inventory, itemLabel, order['nama_order'] ?? "-"),
-            detailTile(Icons.location_pin, "Alamat Jemput",
-                order['alamat_jemput'] ?? "-"),
-            detailTile(
-                Icons.flag, "Alamat Antar", order['alamat_antar'] ?? "-"),
             const SizedBox(height: 28),
 
             // ✅ Tombol Selesaikan Pesanan
@@ -104,25 +97,54 @@ class OrderDetailKurirPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
+
+            // ✅ Tombol Buka Chat
             Center(
-                child: TextButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatPageCourier(orderId: order['id'].toString()),
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatPageCourier(orderId: order['id'].toString()),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.chat, color: Colors.orangeAccent),
+                label: const Text(
+                  "Buka Chat",
+                  style: TextStyle(
+                    color: Colors.orangeAccent,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              },
-              icon: const Icon(Icons.chat, color: Colors.orangeAccent),
-              label: const Text(
-                "Buka Chat",
-                style: TextStyle(
-                  color: Colors.orangeAccent,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ))
+            ),
+
+            // ✅ Tombol Input Tagihan
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InputTagihanPage(orderId: order['id']),
+      ),
+    );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("🚧 Fitur Input Tagihan belum tersedia")),
+                  );
+                },
+                icon: const Icon(Icons.attach_money, color: Colors.orangeAccent),
+                label: const Text(
+                  "Input Tagihan",
+                  style: TextStyle(
+                    color: Colors.orangeAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -166,7 +188,7 @@ class OrderDetailKurirPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  order['layanan'] ?? "-",
+                  "Layanan ${order['layanan'] ?? "-"}",
                   style: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
               ],

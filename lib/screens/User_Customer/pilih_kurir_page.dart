@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
+
 import 'package:misi_paket/bloc/order_bloc/order_bloc.dart';
 import 'package:misi_paket/bloc/order_bloc/order_event.dart';
 
@@ -51,32 +53,49 @@ class _PilihKurirPageState extends State<PilihKurirPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         title: const Text("Pilih Kurir/Driver"),
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: const Color.fromARGB(255, 51, 72, 86),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Lottie.asset(
+                    'lib/assets/Fainyetir.json',
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Bentar ya, lagi cari kurir yang available nih!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: kurirList.length,
               itemBuilder: (context, index) {
                 final kurir = kurirList[index];
-                return ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.orangeAccent,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                  title: Text(kurir['name']),
-                  subtitle: Text(kurir['phone']),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                return GestureDetector(
                   onTap: () {
                     context.read<OrderBloc>().add(SetKurirEvent(
-                    namaKurir: kurir['name'],
-                    noHpKurir: kurir['phone'],
-                    kurirId: kurir['id'], // ← ini penting untuk dipakai di ConfirmPage
-                  ));
-
+                          namaKurir: kurir['name'],
+                          noHpKurir: kurir['no_hp'],
+                          kurirId: kurir['id'],
+                        ));
 
                     Navigator.pushNamed(
                       context,
@@ -84,6 +103,38 @@ class _PilihKurirPageState extends State<PilihKurirPage> {
                       arguments: widget.role,
                     );
                   },
+                  child: Card(
+                    color: const Color(0xFF2B2B2B),
+                    elevation: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      leading: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: const Color(0xFFEF5B2E),
+                        child: const Icon(Icons.person, color: Colors.white, size: 30),
+                      ),
+                      title: Text(
+                        kurir['name'],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        kurir['no_hp'],
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 18),
+                    ),
+                  ),
                 );
               },
             ),

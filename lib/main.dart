@@ -7,7 +7,6 @@ import 'package:misi_paket/screens/User_Customer/pesananDiprosesPage.dart';
 import 'package:misi_paket/screens/change_password_page.dart';
 import 'package:misi_paket/screens/login.dart';
 import 'package:misi_paket/screens/User_Customer/pilih_kurir_page.dart';
-import 'package:misi_paket/screens/User_Customer/select_location_page.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
@@ -30,11 +29,6 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => LoginPage(),
-
-        '/lokasi_picker': (context) {
-          final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'barang';
-          return LokasiPickerPage(role: role);
-        },
 
         '/pilih_kurir': (context) {
           final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'barang';

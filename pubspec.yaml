@@ -20,9 +20,12 @@ dependencies:
   http: 1.4.0
   latlong2: ^0.9.0
   shared_preferences: ^2.2.2
-  web_socket_channel: ^2.4.0
+  web_socket_channel: 3.0.3
   local_auth: ^2.1.6
   lottie: ^3.0.0
+  centrifuge: ^0.16.0
+
+
 
 
 
@@ -50,4 +53,5 @@ flutter:
     - lib/assets/promo2.jpg
     - lib/assets/iconapk.png
     - lib/assets/hi_icon.png
+    - lib/assets/sembako.png
     - "lib/assets/Fainyetir.json"

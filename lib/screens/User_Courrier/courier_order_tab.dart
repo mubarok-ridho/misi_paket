@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:misi_paket/screens/User_Courrier/Orderdetailkurir.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:misi_paket/screens/User_Courrier/Orderdetailkurir.dart';
 import 'order_card.dart';
 
 class CourierOrderTab extends StatefulWidget {
@@ -29,8 +29,7 @@ class _CourierOrderTabState extends State<CourierOrderTab> {
     final token = prefs.getString('token');
 
     try {
-      final url = Uri.parse(
-          "http://localhost:8080/api/kurir/${widget.kurirId}/orders");
+      final url = Uri.parse("http://localhost:8080/api/kurir/${widget.kurirId}/orders/proses");
       final response = await http.get(
         url,
         headers: {
@@ -51,6 +50,24 @@ class _CourierOrderTabState extends State<CourierOrderTab> {
       print("❌ Error: $e");
       setState(() => isLoading = false);
     }
+  }
+
+  Color getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'proses':
+        return Colors.orange;
+      case 'selesai':
+        return Colors.green;
+      case 'batal':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String capitalize(String input) {
+    if (input.isEmpty) return input;
+    return input[0].toUpperCase() + input.substring(1);
   }
 
   @override
@@ -87,18 +104,14 @@ class _CourierOrderTabState extends State<CourierOrderTab> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  OrderDetailKurirPage(order: order),
+                              builder: (_) => OrderDetailKurirPage(order: order),
                             ),
                           );
                         },
                         child: OrderCard(
                           orderId: "#${order['id']}",
-                          type: order['layanan'] ?? "-",
+                          type: "Layanan ${capitalize(order['layanan'] ?? '-')}",
                           customerName: order['nama_customer'] ?? "-",
-                          pickup: order['alamat_jemput'] ?? '-',
-                          destination: order['alamat_antar'] ?? '-',
-                          distance: "-", // opsional
                           status: order['status'] ?? '-',
                           statusColor: getStatusColor(order['status']),
                         ),
@@ -109,18 +122,5 @@ class _CourierOrderTabState extends State<CourierOrderTab> {
         ),
       ),
     );
-  }
-
-  Color getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'proses':
-        return Colors.orange;
-      case 'selesai':
-        return Colors.green;
-      case 'batal':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }

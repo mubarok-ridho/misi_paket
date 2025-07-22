@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:misi_paket/screens/User_Customer/edit_profile_page.dart';
+import 'package:misi_paket/screens/change_password_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
@@ -92,11 +94,25 @@ class _ProfilePageState extends State<ProfilePage> {
                             _buildInfoCard("Email", user?['email'] ?? "-"),
                             _buildInfoCard("No. Telepon", user?['phone'] ?? "-"),
                             const SizedBox(height: 20),
-                            _buildActionTile(Icons.edit, "Edit Profil", Colors.orangeAccent, () {
-                              // TODO: Navigasi ke halaman edit
+                            _buildActionTile(Icons.edit, "Edit Profil", Colors.orangeAccent, () async {
+                              if (user != null && mounted) {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EditProfilePage(
+                                    ),
+                                  ),
+                                );
+                                fetchProfile(); // Refresh setelah kembali
+                              }
                             }),
                             _buildActionTile(Icons.lock, "Ubah Password", Colors.orangeAccent, () {
-                              // TODO: Navigasi ke ubah password
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
+    );
+
                             }),
                             _buildActionTile(Icons.logout, "Keluar", Colors.redAccent, logout),
                           ],

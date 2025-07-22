@@ -1,13 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:misi_paket/screens/User_Customer/SelectCurrentLocationPage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-
-import 'package:misi_paket/screens/User_Customer/barang_order_form.dart';
-import 'package:misi_paket/screens/User_Customer/makanan_order_form.dart';
-import 'package:misi_paket/screens/User_Customer/select_location_page.dart';
+import 'package:misi_paket/screens/User_Customer/edit_profile_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:misi_paket/screens/User_Customer/pilih_kurir_page.dart';
 import 'package:misi_paket/screens/User_Customer/user_profile.dart';
 import 'package:misi_paket/screens/User_Customer/order_list_page.dart';
 
@@ -20,7 +17,7 @@ class CustomerDashboard extends StatefulWidget {
 
 class _CustomerDashboardState extends State<CustomerDashboard> {
   int _selectedIndex = 0;
-  String currentAddress = "Lokasi Anda";
+  String currentAddress = "";
   LatLng currentLatLng = const LatLng(-6.200000, 106.816666);
   String userName = "User";
   bool _locationLoaded = false;
@@ -39,36 +36,28 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     _loadUserName();
   }
 
-Future<void> _loadUserName() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-  try {
-    final response = await http.get(
-      Uri.parse('http://localhost:8080/api/users/profile'), // <- ganti sesuai endpoint kamu
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8080/api/users/profile'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-    print('Status: ${response.statusCode}');
-    print('Body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final name = data['name'];
-
-      setState(() {
-        userName = name;
-      });
-    } else {
-      print('Gagal memuat nama user: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final name = data['name'];
+        setState(() => userName = name);
+      }
+    } catch (e) {
+      print('Error fetching user name: $e');
     }
-  } catch (e) {
-    print('Error saat mengambil nama user: $e');
-  }
 
-  _nameLoaded = true;
-  _trySetPages();
-}
+    _nameLoaded = true;
+    _trySetPages();
+  }
 
   Future<void> _loadSavedLocation() async {
     final prefs = await SharedPreferences.getInstance();
@@ -82,6 +71,7 @@ Future<void> _loadUserName() async {
         currentLatLng = LatLng(lat, lng);
       });
     }
+
     _locationLoaded = true;
     _trySetPages();
   }
@@ -101,7 +91,7 @@ Future<void> _loadUserName() async {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const SelectCurrentLocationPage(),
+              builder: (_) => const EditProfilePage(),
             ),
           );
 
@@ -131,7 +121,9 @@ Future<void> _loadUserName() async {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
-      body: pages.isNotEmpty ? pages[_selectedIndex] : const Center(child: CircularProgressIndicator()),
+      body: pages.isNotEmpty
+          ? pages[_selectedIndex]
+          : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF2B2B2B),
@@ -155,7 +147,7 @@ Future<void> _loadUserName() async {
           ),
           child: BottomNavigationBar(
             backgroundColor: const Color(0xFF2B2B2B),
-            selectedItemColor: Color(0xFFF24B1D),
+            selectedItemColor: const Color(0xFFF24B1D),
             unselectedItemColor: Colors.white70,
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
@@ -203,7 +195,9 @@ class MenuButton extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            height: 100,
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: colors,
@@ -211,38 +205,37 @@ class MenuButton extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color.fromARGB(80, 0, 0, 0),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                  offset: Offset(4, 6),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 8,
+                  offset: const Offset(2, 4),
                 )
               ],
             ),
-            child: SizedBox(
-              height: 80,
-              width: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   label,
                   style: const TextStyle(
-                    color: Color.fromARGB(255, 228, 228, 228),
-                    fontSize: 22,
+                    fontSize: 20,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    height: 1.3,
                   ),
                 ),
               ),
             ),
           ),
           Positioned(
-            right: -20,
-            bottom: -30,
+            right: -24,
+            bottom: -22,
             child: Image.asset(
               iconPath,
-              height: 135,
-              width: 135,
+              height: 160,
+              width: 160,
               fit: BoxFit.contain,
             ),
           ),
@@ -275,60 +268,44 @@ class HomeTab extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 24),
-                Stack(
-                  children: [
-                    Container(
-                      height: 260,
-                      width: double.infinity,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF1E1E1E), Color(0xFF2B2B2B)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.elliptical(500, 180),
-                          bottomRight: Radius.elliptical(500, 180),
-                        ),
-                      ),
+                Container(
+                  height: 260,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF1E1E1E), Color(0xFF2B2B2B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18, left: 16, right: 16),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on, color: Colors.white),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: onSetLocation,
-                              child: Text(
-                                currentAddress,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  decoration: TextDecoration.underline,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.elliptical(500, 180),
+                      bottomRight: Radius.elliptical(500, 180),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 18, left: 16, right: 16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: onSetLocation,
+                            child: Text(
+                              currentAddress,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => ProfilePage()),
-                              );
-                            },
-                            child: const CircleAvatar(
-                              backgroundColor: Colors.white,
-                              child: Icon(Icons.person, color: Color(0xFFF24B1D)),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
                 Container(
                   transform: Matrix4.translationValues(0, -180, 0),
@@ -345,93 +322,59 @@ class HomeTab extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF4A90E2), Color(0xFF063178)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color.fromARGB(80, 0, 0, 0),
-                              blurRadius: 16,
-                              spreadRadius: 2,
-                              offset: Offset(4, 6),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Image.asset(
-                              'lib/assets/hi_icon.png',
-                              height: 80,
-                              width: 80,
-                              fit: BoxFit.contain,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Hai, $userName',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Mau pesan apa hari ini?',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      greetingCard(),
                       const SizedBox(height: 32),
                       MenuButton(
                         label: "Pengantaran \nBarang",
                         iconPath: 'lib/assets/goods.png',
-                        colors: [Color(0xFFF2784B), Color(0xFFE0523E)],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const FormBarangPage()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      MenuButton(
-                        label: "Pengantaran \nMakanan",
-                        iconPath: 'lib/assets/food.png',
-                        colors: [Color(0xFFFF8C42), Color(0xFFE1622F)],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const FormAwalmamPage()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      MenuButton(
-                        label: "Pengantaran \nPenumpang",
-                        iconPath: 'lib/assets/passanger.png',
-                        colors: [Color(0xFFC2574F), Color(0xFF8C3B35)],
+                        colors: [Color(0xFFEF5B2E), Color.fromARGB(255, 179, 53, 14)],
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const LokasiPickerPage(role: 'penumpang'),
+                              builder: (_) => const PilihKurirPage(role: 'barang'),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      MenuButton(
+                        label: "Pengantaran \nMakanan",
+                        iconPath: 'lib/assets/food.png',
+                        colors: [Color(0xFFEF5B2E), Color(0xFFE36135)],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PilihKurirPage(role: 'makanan'),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      MenuButton(
+                        label: "Pengantaran \nPenumpang",
+                        iconPath: 'lib/assets/passanger.png',
+                        colors: [Color(0xFFEF5B2E), Color(0xFFB3350E)],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PilihKurirPage(role: 'penumpang'),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      MenuButton(
+                        label: "Pengantaran \nSembako",
+                        iconPath: 'lib/assets/sembako.png',
+                        colors: [Color(0xFFEF5B2E), Color(0xFFB3350E)],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PilihKurirPage(role: 'sembako'),
                             ),
                           );
                         },
@@ -445,6 +388,57 @@ class HomeTab extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget greetingCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF334856), Color(0xFF063178)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromARGB(80, 0, 0, 0),
+            blurRadius: 16,
+            spreadRadius: 2,
+            offset: Offset(4, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Image.asset('lib/assets/hi_icon.png', height: 80, width: 80),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hai, $userName',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Mau pesan apa hari ini?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
