@@ -100,54 +100,48 @@ class _PesananDiprosesPageState extends State<PesananDiprosesPage> {
 
               // Tombol Chat
               ElevatedButton.icon(
-                onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  final userId = prefs.getInt('user_id');
-                  final token = prefs.getString('token');
-                  final role = 'customer';
-print('DEBUG: userId = $userId');
-print('DEBUG: token = $token');
-print('DEBUG: role = $role');
-print('DEBUG: _kurirId = $_kurirId');
-print('DEBUG: _kurirName = $_kurirName');
-print('DEBUG: orderId = ${widget.order.id}');
+  onPressed: () async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
+    final token = prefs.getString('token');
+    final senderName = prefs.getString('user_name'); // pastikan disimpan saat login
+    final senderRole = 'customer';
+print("DEBUG userId: $userId");
+print("DEBUG token: $token");
+print("DEBUG senderName: $senderName");
+print("DEBUG kurirId: $_kurirId");
+print("DEBUG kurirName: $_kurirName");
 
-                  if (userId != null && token != null && role != null && _kurirName != null && _kurirId != null) {
+    if (userId != null && token != null  && _kurirId != null && _kurirName != null) {
+      Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => ChatPage(
+      userId: userId,
+      receiverId: _kurirId!,
+      orderId: widget.order.id,
+            senderRole: senderRole,
+          ),
+        ),
+      );
+    } else {
+      print("DEBUG: Data tidak lengkap untuk membuka chat");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal membuka chat: data tidak lengkap")),
+      );
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFFFF7E30),
+    minimumSize: const Size.fromHeight(50),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  icon: const Icon(Icons.chat),
+  label: const Text("Buka Chat dengan Kurir"),
+),
 
-                    print('DEBUG: userId = $userId');
-                    print('DEBUG: token = $token');
-                    print('DEBUG: role = $role');
-                    print('DEBUG: kurirId = $_kurirId');
-                    print('DEBUG: orderId = ${widget.order.id}');
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatPage(
-                          userId: userId,
-                          token: token,
-                          receiverId: _kurirId!,
-                          orderId: widget.order.id,
-                        ),
-                      ),
-                    );
-                  } else {
-                    print("DEBUG: Data tidak lengkap untuk membuka chat");
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Gagal membuka chat: data tidak lengkap")),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF7E30),
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.chat),
-                label: const Text("Buka Chat dengan Kurir"),
-              ),
               const SizedBox(height: 12),
 
               // Tombol Lihat Tagihan

@@ -25,7 +25,7 @@ class CentrifugoService {
 
   await client.connect();
 
-  final channel = 'chat#order_$orderId'; // ✅ sekarang aman
+  final channel = 'chat:$orderId'; 
   subscription = client.newSubscription(channel);
 
   subscription!.publication.listen((event) {

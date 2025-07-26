@@ -1,51 +1,56 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/chat_message_model.dart';
+
+class ChatMessage {
+  final String orderId;
+  final String sender;
+  final String message;
+
+  ChatMessage({
+    required this.orderId,
+    required this.sender,
+    required this.message,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      orderId: json['order_id'],
+      sender: json['sender'],
+      message: json['message'],
+    );
+  }
+}
 
 class ChatService {
-  static const String baseUrl = 'http://localhost:8080';
-
-  static Future<List<ChatMessage>> fetchMessages(String orderId) async {
-    final response = await http.get(Uri.parse('$baseUrl/chat/order/$orderId'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => ChatMessage.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load messages');
-    }
-  }
+  static const String baseUrl = 'http://localhost:8080'; // Ganti jika perlu
 
   static Future<ChatMessage> sendMessage({
     required String orderId,
-    required String senderId,
-    required String senderName,
-    required String senderRole,
+    required String sender,
     required String message,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/chat/send'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'order_id': orderId,
-        'sender_id': senderId,
-        'sender_name': senderName,
-        'sender_role': senderRole,
-        'message': message,
-      }),
-    );
+    final url = Uri.parse('$baseUrl/send-chat');
+    final headers = {'Content-Type': 'application/json'};
+
+    final body = jsonEncode({
+      'order_id': orderId,
+      'sender': sender,
+      'message': message,
+    });
+
+    // Debug print untuk memantau body yang dikirim
+    print("🔼 Sending chat message:");
+    print(body);
+
+    final response = await http.post(url, headers: headers, body: body);
 
     if (response.statusCode == 200) {
-      return ChatMessage(
-        orderId: orderId,
-        senderId: senderId,
-        senderName: senderName,
-        senderRole: senderRole,
-        message: message,
-        time: DateTime.now(),
-      );
+      print("✅ Message sent. Response: ${response.body}");
+      return ChatMessage.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to send message');
+      print("❌ Failed to send message. Status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+      throw Exception('Failed to send chat message');
     }
   }
 }

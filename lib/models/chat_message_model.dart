@@ -25,4 +25,15 @@ class ChatMessage {
       time: DateTime.parse(json['time']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'order_id': orderId,
+      'sender_id': senderId,
+      'sender_name': senderName,
+      'sender_role': senderRole,
+      'message': message,
+      'time': time.toIso8601String(),
+    };
+  }
 }
