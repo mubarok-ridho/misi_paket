@@ -16,6 +16,8 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController totalController = TextEditingController();
   bool isSubmitting = false;
+  bool isReadOnly = false;
+  bool showEditButton = false;
 
   Future<void> submitTagihan() async {
     if (!_formKey.currentState!.validate()) return;
@@ -58,6 +60,43 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
     }
   }
 
+  Future<void> fetchExistingTagihan() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    final url = Uri.parse("http://localhost:8080/api/orders/${widget.orderId}");
+
+    try {
+      final response = await http.get(url, headers: {
+        "Authorization": "Bearer $token",
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final order = data['order'];
+
+        if (order['nominal'] != null) {
+          totalController.text = order['nominal'].toString();
+          setState(() {
+            isReadOnly = true; // jika sudah ada tagihan → readonly
+            showEditButton = true; // munculkan tombol edit
+          });
+        }
+      } else {
+        print("❌ Gagal ambil data order: ${response.body}");
+      }
+    } catch (e) {
+      print("❌ Error saat ambil tagihan: $e");
+    }
+  }
+
+  void enableEditing() {
+    setState(() {
+      isReadOnly = false;
+      showEditButton = false;
+    });
+  }
+
   Future<void> validasiPembayaran() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -93,11 +132,17 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    fetchExistingTagihan(); // tambahkan ini
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF24313F),
       appBar: AppBar(
-        title: const Text("Input Tagihan"),
+        title: const Text("Tagihan"),
         backgroundColor: const Color(0xFF334856),
         foregroundColor: Colors.white,
       ),
@@ -107,17 +152,40 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
           key: _formKey,
           child: ListView(
             children: [
-              const Text("Total Tagihan", style: TextStyle(color: Colors.white70)),
+              const Text("Total Tagihan",
+                  style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 6),
-              TextFormField(
-                controller: totalController,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: "Contoh: 35000",
-                  hintStyle: TextStyle(color: Colors.white30),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextFormField(
+                        controller: totalController,
+                        keyboardType: TextInputType.number,
+                        readOnly: isReadOnly,
+                        decoration: InputDecoration(
+                          labelText: "Total Tagihan",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    // Tombol edit di pojok kanan atas
+                    if (showEditButton)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: enableEditing,
+                          tooltip: 'Edit Tagihan',
+                        ),
+                      ),
+                  ],
                 ),
-                validator: (val) => val == null || val.isEmpty ? "Wajib diisi" : null,
               ),
               const SizedBox(height: 30),
               ElevatedButton(
@@ -132,7 +200,8 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
                 ),
                 child: isSubmitting
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Kirim Tagihan"),
+                    : Text(
+                        showEditButton ? "Kirim Tagihan" : "Simpan Perubahan"),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(

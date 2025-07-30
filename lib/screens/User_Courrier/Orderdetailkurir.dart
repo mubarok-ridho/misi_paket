@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:misi_paket/screens/User_Courrier/InputTagihanPage.dart';
-import 'package:misi_paket/screens/User_Courrier/kurirchatpage.dart';
+import 'package:misi_paket/screens/chat_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OrderDetailKurirPage extends StatelessWidget {
@@ -35,7 +35,8 @@ class OrderDetailKurirPage extends StatelessWidget {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Gagal menyelesaikan pesanan: ${response.body}")),
+          SnackBar(
+              content: Text("❌ Gagal menyelesaikan pesanan: ${response.body}")),
         );
       }
     } catch (e) {
@@ -70,8 +71,10 @@ class OrderDetailKurirPage extends StatelessWidget {
             headerCard(order),
             const SizedBox(height: 24),
 
-            detailTile(Icons.person, "Nama Customer", order['nama_customer'] ?? "-"),
-            detailTile(Icons.local_shipping, "Layanan", order['layanan'] ?? "-"),
+            detailTile(
+                Icons.person, "Nama Customer", order['nama_customer'] ?? "-"),
+            detailTile(
+                Icons.local_shipping, "Layanan", order['layanan'] ?? "-"),
             detailTile(Icons.inventory, itemLabel, order['nama_order'] ?? "-"),
             const SizedBox(height: 28),
 
@@ -101,11 +104,37 @@ class OrderDetailKurirPage extends StatelessWidget {
             // ✅ Tombol Buka Chat
             Center(
               child: TextButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  print('🧾 order keys: ${order.keys}');
+                  print('📦 order full: $order');
+              
+                  final orderId = order['id'];
+                  final prefs = await SharedPreferences.getInstance();
+                  final kurirId = prefs.getInt('userId');
+                  final customerId = order['customer_id'];
+                  final senderRole = 'kurir';
+              
+                  print('orderId: $orderId');
+                  print('kurirId: $kurirId');
+                  print('customerId: $customerId');
+                  if (orderId == null || kurirId == null || customerId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('Gagal membuka chat, data tidak lengkap')),
+                    );
+                    return;
+                  }
+              
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ChatPageCourier(orderId: order['id'].toString()),
+                      builder: (_) => ChatPage(
+                        userId: kurirId, // user yang sedang login (kurir)
+                        receiverId: customerId, // lawan bicara
+                        orderId: orderId, // ID pesanan
+                        senderRole:senderRole, // untuk backend tahu peran pengirim
+                      ),
                     ),
                   );
                 },
@@ -126,18 +155,20 @@ class OrderDetailKurirPage extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: () {
                   Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InputTagihanPage(orderId: order['id']),
-      ),
-    );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("🚧 Fitur Input Tagihan belum tersedia")),
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => InputTagihanPage(orderId: order['id']),
+                    ),
                   );
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   const SnackBar(
+                  //       content: Text("🚧 Fitur Input Tagihan belum tersedia")),
+                  // );
                 },
-                icon: const Icon(Icons.attach_money, color: Colors.orangeAccent),
+                icon:
+                    const Icon(Icons.attach_money, color: Colors.orangeAccent),
                 label: const Text(
-                  "Input Tagihan",
+                  "Tagihan",
                   style: TextStyle(
                     color: Colors.orangeAccent,
                     fontWeight: FontWeight.bold,

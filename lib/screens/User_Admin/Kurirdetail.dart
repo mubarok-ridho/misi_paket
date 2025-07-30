@@ -21,6 +21,10 @@ class _KurirDetailPageState extends State<KurirDetailPage> {
   model.KurirStatsModel? stats;
   bool isLoading = true;
 
+  final Color primaryColor = const Color(0xFFE64513); // Oranye FaiExpress
+  final Color backgroundColor = const Color(0xFF121212); // Dark
+  final Color cardColor = const Color(0xFF1E1E1E);
+
   @override
   void initState() {
     super.initState();
@@ -37,26 +41,42 @@ class _KurirDetailPageState extends State<KurirDetailPage> {
     }
   }
 
-  Widget buildStatCard(String title, String value, Color color) {
+  Widget buildStatCard(String title, String value, IconData icon) {
     return Card(
-      color: color,
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      color: cardColor,
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
           children: [
-            Text(title,
-                style: const TextStyle(
-                    color: Colors.white70, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Text(value,
-                style: const TextStyle(
+            CircleAvatar(
+              backgroundColor: primaryColor.withOpacity(0.15),
+              child: Icon(icon, color: primaryColor),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: const TextStyle(
                     fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -66,41 +86,54 @@ class _KurirDetailPageState extends State<KurirDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text("Detail Kurir"),
+        backgroundColor: backgroundColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Info Kurir
-                  Text(widget.kurir.nama,
-                      style:
-                          const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text("No. HP: ${widget.kurir.noHp}",
-                      style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                  Text(
+                    widget.kurir.nama,
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Text(
+                  //   // "No. HP: ${widget.kurir.noHp}",
+                  //   style: const TextStyle(fontSize: 16, color: Colors.white54),
+                  // ),
+                  // const SizedBox(height: 30),
 
-                  const SizedBox(height: 24),
-
-                  // Statistik Kurir
+                  // Statistik
                   buildStatCard(
-                      "Pesanan Diproses",
-                      "${stats?.pesananDiproses ?? 0}",
-                      Colors.blueAccent),
-                  const SizedBox(height: 12),
+                    "Pesanan Diproses",
+                    "${stats?.pesananDiproses ?? 0}",
+                    Icons.sync,
+                  ),
+                  const SizedBox(height: 16),
                   buildStatCard(
-                      "Pesanan Selesai Hari Ini",
-                      "${stats?.pesananSelesaiHariIni ?? 0}",
-                      Colors.green),
-                  const SizedBox(height: 12),
+                    "Pesanan Selesai Hari Ini",
+                    "${stats?.pesananSelesaiHariIni ?? 0}",
+                    Icons.check_circle_outline,
+                  ),
+                  const SizedBox(height: 16),
                   buildStatCard(
-                      "Pendapatan Hari Ini",
-                      "Rp${stats?.pendapatanHariIni ?? 0}",
-                      Colors.deepPurple),
+                    "Pendapatan Hari Ini",
+                    "Rp${stats?.pendapatanHariIni.toStringAsFixed(0) ?? 0}",
+                    Icons.attach_money,
+                  ),
                 ],
               ),
             ),

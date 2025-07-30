@@ -49,9 +49,9 @@ class KurirStatsService {
         final raw = prosesResponse.body;
         if (raw != null && raw.trim().isNotEmpty && raw.trim() != "null") {
           final data = jsonDecode(raw);
-          if (data is Map && data['data'] is List) {
-            prosesCount = (data['data'] as List).length;
-          }
+if (data is List) {
+  prosesCount = data.length;
+}
         }
       } catch (e) {
         print("⚠️ Gagal parsing proses: $e");
