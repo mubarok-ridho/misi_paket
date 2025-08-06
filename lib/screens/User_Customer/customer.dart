@@ -283,7 +283,8 @@ class HomeTab extends StatelessWidget {
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 18, left: 16, right: 16),
+                    padding:
+                        const EdgeInsets.only(top: 18, left: 16, right: 16),
                     child: Row(
                       children: [
                         const Icon(Icons.location_on, color: Colors.white),
@@ -327,12 +328,16 @@ class HomeTab extends StatelessWidget {
                       MenuButton(
                         label: "Pengantaran \nBarang",
                         iconPath: 'lib/assets/goods.png',
-                        colors: [Color(0xFFEF5B2E), Color.fromARGB(255, 179, 53, 14)],
+                        colors: [
+                          Color(0xFFEF5B2E),
+                          Color.fromARGB(255, 179, 53, 14)
+                        ],
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PilihKurirPage(role: 'barang'),
+                              builder: (_) =>
+                                  const PilihKurirPage(role: 'barang'),
                             ),
                           );
                         },
@@ -346,7 +351,8 @@ class HomeTab extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PilihKurirPage(role: 'makanan'),
+                              builder: (_) =>
+                                  const PilihKurirPage(role: 'makanan'),
                             ),
                           );
                         },
@@ -360,7 +366,8 @@ class HomeTab extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PilihKurirPage(role: 'penumpang'),
+                              builder: (_) =>
+                                  const PilihKurirPage(role: 'penumpang'),
                             ),
                           );
                         },
@@ -374,7 +381,8 @@ class HomeTab extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PilihKurirPage(role: 'sembako'),
+                              builder: (_) =>
+                                  const PilihKurirPage(role: 'sembako'),
                             ),
                           );
                         },
@@ -392,49 +400,66 @@ class HomeTab extends StatelessWidget {
   }
 
   Widget greetingCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF334856), Color(0xFF063178)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromARGB(80, 0, 0, 0),
-            blurRadius: 16,
-            spreadRadius: 2,
-            offset: Offset(4, 6),
-          ),
-        ],
-      ),
-      child: Row(
+    return SizedBox(
+      height: 120,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Image.asset('lib/assets/hi_icon.png', height: 80, width: 80),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hai, $userName',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Mau pesan apa hari ini?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+          // Background card
+          Container(
+            padding: const EdgeInsets.only(
+                left: 135, right: 20, top: 16, bottom: 16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF334856), Color(0xFF063178)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromARGB(80, 0, 0, 0),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                  offset: Offset(4, 6),
                 ),
               ],
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Hai, $userName',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Mau pesan apa hari ini?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Gambar yang menumpuk dan keluar dari card
+          Positioned(
+            left: -10,
+            top: -20,
+            child: Image.asset(
+              'lib/assets/hi_icon.png',
+              height: 140,
+              width: 140,
             ),
           ),
         ],

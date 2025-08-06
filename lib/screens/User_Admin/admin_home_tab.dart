@@ -71,7 +71,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
             .map<int>((e) => e['kurir_id'])
             .toSet();
 
-        kurirList = allUsers.where((u) => u['role'] == 'kurir').toList();
+        // kurirList = allUsers.where((u) => u['role'] == 'kurir').toList();
+        kurirList = allUsers.where((u) => u['role'] == 'kurir' && u['status_kerja'] == 'aktif').toList();
+
 
         totalPendapatan = pendapatanData['total_pendapatan'] ?? 0;
         totalSelesai = selesaiTodayData['total_orders_selesai'] ?? 0;
@@ -185,8 +187,8 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             }
 
                             return InkWell(
-onTap: () {
-  Navigator.push(
+onTap: () async {
+  final result = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => KurirDetailPage(
@@ -195,6 +197,14 @@ onTap: () {
       ),
     ),
   );
+
+  // Kalau result true (berarti ada update), baru refresh
+  if (result == true) {
+    setState(() {
+      isLoading = true;
+    });
+    await fetchDashboardData(); // refresh data
+  }
 },
   child: Container(
     margin: const EdgeInsets.only(bottom: 12),

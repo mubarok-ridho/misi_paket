@@ -172,8 +172,6 @@ class _ConfirmPageState extends State<ConfirmPage> {
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16)),
-                          Text(state.noHpKurir ?? "-",
-                              style: const TextStyle(color: Colors.white54)),
                         ],
                       )
                     ],

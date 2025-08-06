@@ -55,3 +55,9 @@ flutter:
     - lib/assets/hi_icon.png
     - lib/assets/sembako.png
     - "lib/assets/Fainyetir.json"
+    - "lib/assets/Faimanuk.json"
+    - lib/assets/bni.png
+    - lib/assets/mandiri.png
+    - lib/assets/dana.png
+    - lib/assets/pattern.png
+    - lib/assets/confused.png

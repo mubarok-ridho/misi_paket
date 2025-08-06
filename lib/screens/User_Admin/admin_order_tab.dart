@@ -59,6 +59,8 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
     final keyword = searchController.text.toLowerCase();
 
     final filteredOrders = allOrders.where((order) {
+      final kurir = (order['kurir']?['name'] ?? '').toLowerCase(); // tambahkan ini
+      final kurirMatch = kurir.contains(keyword); // dan ini
       final customer = (order['customer']?['name'] ?? '').toLowerCase();
       final layanan = (order['layanan'] ?? '').toLowerCase();
       final idMatch = '#${order['id']}'.contains(keyword);
@@ -66,7 +68,7 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
       final layMatch = layanan.contains(keyword);
       final statusMatch =
           showSelesai ? order['status'] == 'selesai' : order['status'] != 'selesai';
-      return statusMatch && (idMatch || custMatch || layMatch);
+      return statusMatch && (idMatch || custMatch || layMatch || kurirMatch);
     }).toList();
 
     return Scaffold(
@@ -92,7 +94,7 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: const Color(0xFF2A2A2A),
-                    hintText: 'Cari Order ID / Customer / Layanan',
+                    hintText: 'Cari Order ID / Customer / Layanan / Kurir',
                     hintStyle: const TextStyle(color: Colors.white54),
                     prefixIcon: const Icon(Icons.search, color: Colors.orange),
                     border: OutlineInputBorder(
@@ -133,7 +135,8 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
-                      final customer = order['customer']?['name'] ?? 'Tidak diketahui';
+                      // final customer = order['customer']?['name'] ?? 'Tidak diketahui';
+                      final kurir = order['kurir']?['name'] ?? 'Belum assigned';
                       final jenis = order['layanan'] ?? 'Barang';
                       final createdAtStr = order['created_at'] ?? '';
                       final status = order['status'];
@@ -188,7 +191,7 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const SizedBox(height: 4),
-                                Text('Customer: $customer',
+                                Text('Kurir: $kurir',
                                     style: const TextStyle(
                                         color: Colors.white70, fontSize: 13)),
                                 Text('Tanggal: $tanggal',

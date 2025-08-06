@@ -143,12 +143,26 @@ class _OrderListPageState extends State<OrderListPage> {
         onRefresh: fetchOrders,
         color: Colors.orange,
         child: filteredOrders.isEmpty
-            ? ListView(
-                children: const [
-                  SizedBox(height: 300),
-                  Center(child: Text("Belum ada pesanan.", style: TextStyle(color: Colors.white))),
-                ],
-              )
+    ? ListView(
+        children: [
+          const SizedBox(height: 100),
+          Image.asset(
+            'lib/assets/confused.png',
+            height: 200,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 24),
+          const Center(
+            child: Center(
+              child: Text(
+                "Kayaknya kamu belum buat pesanan deh",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      )
+
             : ListView.builder(
                 itemCount: filteredOrders.length,
                 itemBuilder: (context, index) {

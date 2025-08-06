@@ -120,7 +120,10 @@ print("DEBUG kurirName: $_kurirName");
       userId: userId,
       receiverId: _kurirId!,
       orderId: widget.order.id,
-            senderRole: senderRole,
+      senderRole: senderRole, 
+  receiverName: _kurirName ?? 'Kurir', // ✅ Ini yang tampil di AppBar
+      sender: '',
+            
           ),
         ),
       );

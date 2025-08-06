@@ -19,6 +19,56 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
   bool isReadOnly = false;
   bool showEditButton = false;
 
+Future<void> submitMetodeBayar(String method) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final url = Uri.parse("http://localhost:8080/api/orders/${widget.orderId}/metode_bayar");
+  final body = jsonEncode({"metode_bayar": method});
+
+  try {
+    final response = await http.put(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("✅ Metode '$method' berhasil disimpan")),
+      );
+
+      // 👉 Setelah sukses update metode, validasi pembayaran
+      await validasiPembayaran(); 
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Gagal: ${response.body}")),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("❌ Error: $e")),
+    );
+  }
+}
+
+Widget metodeButton(String method, IconData icon) {
+  return ElevatedButton.icon(
+    onPressed: () => submitMetodeBayar(method),
+    icon: Icon(icon),
+    label: Text(method.toUpperCase()),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.orange,
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+  );
+}
+
   Future<void> submitTagihan() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -130,6 +180,36 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
       );
     }
   }
+  void showMetodeBayarSheet() {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    backgroundColor: Colors.white,
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Pilih Metode Pembayaran",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                metodeButton("cash", Icons.money),
+                metodeButton("transfer", Icons.account_balance),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 
   @override
   void initState() {
@@ -201,11 +281,12 @@ class _InputTagihanPageState extends State<InputTagihanPage> {
                 child: isSubmitting
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
-                        showEditButton ? "Kirim Tagihan" : "Simpan Perubahan"),
+                        showEditButton ? "Simpan Perubahan & Kirim" : "Kirim Tagihan"),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: isSubmitting ? null : validasiPembayaran,
+  onPressed: isSubmitting ? null : showMetodeBayarSheet,
+
                 icon: const Icon(Icons.verified_user),
                 label: const Text("Validasi Pembayaran"),
                 style: ElevatedButton.styleFrom(

@@ -125,13 +125,13 @@ class _PilihKurirPageState extends State<PilihKurirPage> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      subtitle: Text(
-                        kurir['no_hp'],
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
+                      // subtitle: Text(
+                      //   kurir['no_hp'],
+                      //   style: const TextStyle(
+                      //     color: Colors.white70,
+                      //     fontSize: 14,
+                      //   ),
+                      // ),
                       trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 18),
                     ),
                   ),
