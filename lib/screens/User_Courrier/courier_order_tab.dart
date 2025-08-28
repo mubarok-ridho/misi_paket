@@ -29,7 +29,7 @@ class _CourierOrderTabState extends State<CourierOrderTab> {
     final token = prefs.getString('token');
 
     try {
-      final url = Uri.parse("http://localhost:8080/api/kurir/${widget.kurirId}/orders/proses");
+      final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/kurir/${widget.kurirId}/orders/proses");
       final response = await http.get(
         url,
         headers: {

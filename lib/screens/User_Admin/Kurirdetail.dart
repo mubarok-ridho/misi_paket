@@ -48,7 +48,7 @@ class _KurirDetailPageState extends State<KurirDetailPage> {
     final userId = widget.kurirId;
 
     final response = await http.get(
-      Uri.parse('http://localhost:8080/api/kurir/$userId'),
+      Uri.parse('https://gin-production-77e5.up.railway.app/api/kurir/$userId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -105,7 +105,7 @@ class _KurirDetailPageState extends State<KurirDetailPage> {
     }
 
     final response = await http.put(
-      Uri.parse('http://localhost:8080/api/kurir/status'),
+      Uri.parse('https://gin-production-77e5.up.railway.app/api/kurir/status'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -199,7 +199,7 @@ class _KurirDetailPageState extends State<KurirDetailPage> {
     final token = prefs.getString('token');
 
     final response = await http.delete(
-      Uri.parse('http://localhost:8080/api/users/$userId'),
+      Uri.parse('https://gin-production-77e5.up.railway.app/api/users/$userId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 class CustomerTagihanPage extends StatefulWidget {
   final int orderId;
@@ -56,7 +57,7 @@ class _CustomerTagihanPageState extends State<CustomerTagihanPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
-    final url = Uri.parse("http://localhost:8080/api/orders/${widget.orderId}");
+    final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/${widget.orderId}");
 
     try {
       final response = await http.get(url, headers: {
@@ -88,7 +89,7 @@ class _CustomerTagihanPageState extends State<CustomerTagihanPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
     final url = Uri.parse(
-        "http://localhost:8080/api/orders/${widget.orderId}/metode_bayar");
+        "https://gin-production-77e5.up.railway.app/api/orders/${widget.orderId}/metode_bayar");
 
     final body = jsonEncode({
       "metode_bayar": selectedMethod,
@@ -123,71 +124,93 @@ class _CustomerTagihanPageState extends State<CustomerTagihanPage> {
     }
   }
 
-  Widget buildBankCard({
-    required String image,
-    required String rekening,
-    required String nama,
-    required LinearGradient borderGradient,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: CustomPaint(
-        painter: GradientBorderPainter(
-          gradient: borderGradient,
-          strokeWidth: 2,
-          radius: 16,
+Widget buildBankCard({
+  required String image,
+  required String rekening,
+  required String nama,
+  required LinearGradient borderGradient,
+}) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 16),
+    child: CustomPaint(
+      painter: GradientBorderPainter(
+        gradient: borderGradient,
+        strokeWidth: 2,
+        radius: 16,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  image,
-                  width: 75,
-                  height: 75,
-                  fit: BoxFit.contain,
-                ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                image,
+                width: 80,
+                height: 80,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      rekening,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          rekening,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      nama,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w400,
+                      GestureDetector(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: rekening));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('✅ Nomor rekening disalin!'),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.copy,
+                          color: Color.fromARGB(179, 223, 70, 4),
+                          size: 22,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    nama,
+                    style: const TextStyle(
+                      color: Color.fromARGB(194, 203, 203, 203),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                     ),
-                  ],
-                ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

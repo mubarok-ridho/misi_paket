@@ -62,7 +62,7 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
   Future<void> fetchKurirProfile() async {
     try {
       final res = await http.get(
-        Uri.parse("http://localhost:8080/api/kurir/$kurirId"),
+        Uri.parse("https://gin-production-77e5.up.railway.app/api/kurir/$kurirId"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (res.statusCode == 200) {
@@ -80,7 +80,7 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
   Future<void> fetchOrdersProses() async {
     try {
       final res = await http.get(
-        Uri.parse("http://localhost:8080/api/kurir/$kurirId/orders/proses"),
+        Uri.parse("https://gin-production-77e5.up.railway.app/api/kurir/$kurirId/orders/proses"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (res.statusCode == 200) {
@@ -96,7 +96,7 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
   Future<void> fetchOrdersSelesaiToday() async {
     try {
       final res = await http.get(
-        Uri.parse("http://localhost:8080/api/kurir/$kurirId/orders/selesai/today"),
+        Uri.parse("https://gin-production-77e5.up.railway.app/api/kurir/$kurirId/orders/selesai/today"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (res.statusCode == 200) {
@@ -111,7 +111,7 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
   Future<void> fetchPendapatanToday() async {
     try {
       final res = await http.get(
-        Uri.parse("http://localhost:8080/api/pendapatan/kurir/$kurirId/today"),
+        Uri.parse("https://gin-production-77e5.up.railway.app/api/pendapatan/kurir/$kurirId/today"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (res.statusCode == 200) {
@@ -137,6 +137,7 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeaderCard(),
+                _buildMotivationCard(),
                 const SizedBox(height: 24),
                 _buildStatusCards(),
                 const SizedBox(height: 24),
@@ -153,28 +154,67 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color.fromARGB(255, 135, 18, 18), Color.fromARGB(255, 131, 31, 31)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF1B2A3A),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 30,
-            backgroundColor: Colors.white,
-            child: Icon(Icons.motorcycle, color: Color(0xFFE23D19), size: 28),
+  child: Icon(Icons.person, size: 30, color: Colors.white),
+            backgroundColor: const Color.fromARGB(255, 167, 96, 4),
           ),
           const SizedBox(width: 16),
           Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Hai, $kurirName",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMotivationCard() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 194, 94, 27),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Center(
             child: Text(
-              "Hai, $kurirName",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+              "'Sesungguhnya Allah mencintai mukmin yang bekerja keras.'",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          SizedBox(height: 8),
+          Center(
+            child: Text(
+              "HR. Tirmidzi",
+              style: TextStyle(
                 color: Colors.white,
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),
@@ -192,16 +232,16 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
               title: "Diproses",
               value: "$prosesHariIni",
               icon: Icons.timelapse,
-              bgColor: Color.fromARGB(255, 13, 99, 186),
-              iconColor: Color.fromARGB(255, 231, 104, 0),
+              bgColor: const Color(0xFF2E3A59),
+              iconColor: const Color(0xFFFFA726),
             ),
             const SizedBox(width: 12),
             _buildSmallCard(
               title: "Selesai Hari Ini",
               value: "$selesaiHariIni",
               icon: Icons.check_circle,
-              bgColor: Color.fromARGB(255, 4, 94, 81),
-              iconColor: Color.fromARGB(255, 231, 104, 0),
+              bgColor: const Color(0xFF3C2F48),
+              iconColor: const Color(0xFFFF7043),
             ),
           ],
         ),
@@ -212,61 +252,54 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
   }
 
   Widget _buildSmallCard({
-  required String title,
-  required String value,
-  required IconData icon,
-  required Color bgColor, // Tidak dipakai, tapi tetap disimpan kalau mau fleksibel
-  required Color iconColor,
-}) {
-  return Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(2), // Border thickness
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFA726), Color(0xFFEF6C00)], // Oranye terang ke oranye gelap
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color bgColor,
+    required Color iconColor,
+  }) {
+    return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C2C2C), // Abu tua
-          borderRadius: BorderRadius.circular(14),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Color.fromARGB(255, 255, 133, 81), width: 1), // ini warna outline
+
         ),
-        child: Column(
-          children: [
-            Icon(icon, color: iconColor, size: 35),
-            const SizedBox(height: 6),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C2C2C),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: iconColor, size: 35),
+              const SizedBox(height: 6),
+              Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildIncomeCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color.fromARGB(255, 11, 68, 53), Color.fromARGB(255, 16, 117, 158)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF114455),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -290,6 +323,7 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 12),
         const Text("Aktivitas Terkini",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
@@ -305,12 +339,12 @@ class _CourierHomeTabState extends State<CourierHomeTab> with RouteAware {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFF1C1C1C),
-              border: Border.all(color: const Color(0xFFE23D19), width: 1),
+              border: Border.all(color: const Color(0xFF00B5D8), width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(Icons.local_shipping, color: Colors.orange),
+                const Icon(Icons.local_shipping, color: Colors.orangeAccent),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

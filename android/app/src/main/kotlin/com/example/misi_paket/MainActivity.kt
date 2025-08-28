@@ -1,5 +1,6 @@
-package com.example.misi_paket
+package com.example.misi_paket // ini harus sama kayak di AndroidManifest package
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity: FlutterActivity()
+class MainActivity: FlutterFragmentActivity() {
+}

@@ -34,7 +34,7 @@ class _TambahKurirPageState extends State<TambahKurirPage> {
 
     try {
       final res = await http.post(
-        Uri.parse('http://localhost:8080/register'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/register'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

@@ -11,7 +11,7 @@ class CentrifugoService {
 
   Future<void> connect(String userId, String token, int orderId) async {
   client = createClient(
-    'ws://localhost:9000/connection/websocket?format=json',
+    'ws://109.105.194.213:9000/connection/websocket',
     ClientConfig(token: token),
   );
 

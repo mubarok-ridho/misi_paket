@@ -34,7 +34,7 @@ class _PesananDiprosesPageState extends State<PesananDiprosesPage> {
 
   if (token == null) return;
 
-  final url = Uri.parse("http://localhost:8080/api/orders/${widget.order.id}");
+  final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/${widget.order.id}");
   final response = await http.get(url, headers: {
     "Authorization": "Bearer $token",
   });

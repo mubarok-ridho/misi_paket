@@ -27,7 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
       errorMsg = null;
     });
 
-    final url = Uri.parse('http://localhost:8080/register');
+    final url = Uri.parse('https://gin-production-77e5.up.railway.app/register');
     final res = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

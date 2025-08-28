@@ -35,7 +35,7 @@ class _ConfirmPageState extends State<ConfirmPage> {
     _showLoading(context);
 
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/orders"),
+      Uri.parse("https://gin-production-77e5.up.railway.app/api/orders"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",

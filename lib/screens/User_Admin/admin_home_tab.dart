@@ -36,22 +36,22 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
       final token = prefs.getString('token') ?? '';
 
       final ordersRes = await http.get(
-        Uri.parse('http://localhost:8080/api/orders'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/orders'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
       final userRes = await http.get(
-        Uri.parse('http://localhost:8080/api/users'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/users'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
       final pendapatanRes = await http.get(
-        Uri.parse('http://localhost:8080/api/pendapatan/total-all-today'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/pendapatan/total-all-today'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
       final selesaiTodayRes = await http.get(
-        Uri.parse('http://localhost:8080/api/orders/total-selesai-today'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/orders/total-selesai-today'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

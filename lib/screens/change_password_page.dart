@@ -30,7 +30,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     setState(() => isLoading = true);
 
     final response = await http.put(
-      Uri.parse('http://localhost:8080/users/$userId/password'),
+      Uri.parse('https://gin-production-77e5.up.railway.app/users/$userId/password'),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",

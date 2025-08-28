@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -42,7 +43,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/users/profile'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/users/profile'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -100,7 +101,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               currentAddress = result['address'];
               currentLatLng = result['latlng'];
             });
-            _saveLocation(result['address'], result['latlng']);
           }
         },
       ),
@@ -108,13 +108,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       ProfilePage(),
     ];
     setState(() {});
-  }
-
-  Future<void> _saveLocation(String address, LatLng latlng) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_address', address);
-    await prefs.setDouble('selected_lat', latlng.latitude);
-    await prefs.setDouble('selected_lng', latlng.longitude);
   }
 
   @override
@@ -195,7 +188,7 @@ class MenuButton extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            height: 100,
+            height: 120,
             width: double.infinity,
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
             decoration: BoxDecoration(
@@ -220,7 +213,7 @@ class MenuButton extends StatelessWidget {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 28,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     height: 1.3,
@@ -234,8 +227,8 @@ class MenuButton extends StatelessWidget {
             bottom: -22,
             child: Image.asset(
               iconPath,
-              height: 160,
-              width: 160,
+              height: 185,
+              width: 185,
               fit: BoxFit.contain,
             ),
           ),
@@ -245,7 +238,8 @@ class MenuButton extends StatelessWidget {
   }
 }
 
-class HomeTab extends StatelessWidget {
+// Ini bagian HomeTab yang gue ubah jadi StatefulWidget dengan auto scroll promoCard di atas
+class HomeTab extends StatefulWidget {
   final String currentAddress;
   final String userName;
   final VoidCallback onSetLocation;
@@ -258,6 +252,49 @@ class HomeTab extends StatelessWidget {
   });
 
   @override
+  _HomeTabState createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  final List<String> promoImages = [
+    'lib/assets/promo1.png',
+    'lib/assets/promo2.png',
+    'lib/assets/promo3.png',
+  ];
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_pageController.hasClients) {
+        _currentPage++;
+        if (_currentPage >= promoImages.length) {
+          _currentPage = 0;
+        }
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -265,133 +302,90 @@ class HomeTab extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-                Container(
-                  height: 260,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1E1E1E), Color(0xFF2B2B2B)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.elliptical(500, 180),
-                      bottomRight: Radius.elliptical(500, 180),
-                    ),
-                  ),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.only(top: 18, left: 16, right: 16),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: onSetLocation,
-                            child: Text(
-                              currentAddress,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                decoration: TextDecoration.underline,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 17), // kasih jarak kiri kanan semua isi 8 px
+              child: Column(
+                children: [
+                  const SizedBox(height: 90), // kasih jarak 16px dari atas
+              
+                  // Promo card dipindah paling atas biar nongol duluan
+                  Padding(
+                    padding: const EdgeInsets.only(top:15),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.width * 0.355,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: promoImages.length,
+                        itemBuilder: (context, index) {
+                          return promoCard(promoImages[index]);
+                        },
+                      ),
                     ),
                   ),
-                ),
-                Container(
-                  transform: Matrix4.translationValues(0, -180, 0),
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 150,
-                        child: PageView(
-                          children: [
-                            promoCard('lib/assets/promo1.png'),
-                            promoCard('lib/assets/promo2.jpg'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      greetingCard(),
-                      const SizedBox(height: 32),
-                      MenuButton(
-                        label: "Pengantaran \nBarang",
-                        iconPath: 'lib/assets/goods.png',
-                        colors: [
-                          Color(0xFFEF5B2E),
-                          Color.fromARGB(255, 179, 53, 14)
-                        ],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const PilihKurirPage(role: 'barang'),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      MenuButton(
-                        label: "Pengantaran \nMakanan",
-                        iconPath: 'lib/assets/food.png',
-                        colors: [Color(0xFFEF5B2E), Color(0xFFE36135)],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const PilihKurirPage(role: 'makanan'),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      MenuButton(
-                        label: "Pengantaran \nPenumpang",
-                        iconPath: 'lib/assets/passanger.png',
-                        colors: [Color(0xFFEF5B2E), Color(0xFFB3350E)],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const PilihKurirPage(role: 'penumpang'),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      MenuButton(
-                        label: "Pengantaran \nSembako",
-                        iconPath: 'lib/assets/sembako.png',
-                        colors: [Color(0xFFEF5B2E), Color(0xFFB3350E)],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const PilihKurirPage(role: 'sembako'),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 40),
+                  const SizedBox(height: 50),
+                  greetingCard(),
+                  const SizedBox(height: 35),
+                  MenuButton(
+                    label: "Pengantaran \nBarang",
+                    iconPath: 'lib/assets/goods.png',
+                    colors: [
+                      Color(0xFFEF5B2E),
+                      Color.fromARGB(255, 163, 47, 12)
                     ],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PilihKurirPage(role: 'barang'),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  MenuButton(
+                    label: "Pengantaran \nMakanan",
+                    iconPath: 'lib/assets/food.png',
+                    colors: [Color.fromARGB(255, 163, 47, 12), Color(0xFFE36135)],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PilihKurirPage(role: 'makanan'),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 2),
+                  MenuButton(
+                    label: "Pengantaran \nPenumpang",
+                    iconPath: 'lib/assets/passanger.png',
+                    colors: [Color(0xFFEF5B2E), Color.fromARGB(255, 163, 47, 12)],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PilihKurirPage(role: 'penumpang'),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 2),
+                  MenuButton(
+                    label: "Pengantaran \nSembako",
+                    iconPath: 'lib/assets/sembako.png',
+                    colors: [Color.fromARGB(255, 163, 47, 12), Color(0xFFE36135)],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PilihKurirPage(role: 'sembako'),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         );
@@ -432,16 +426,16 @@ class HomeTab extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Hai, $userName',
+                    'Haii ${widget.userName}',
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Mau pesan apa hari ini?',
+                    'Lagi butuh apa hari ini?',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,

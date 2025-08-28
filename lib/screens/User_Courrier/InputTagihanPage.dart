@@ -23,7 +23,7 @@ Future<void> submitMetodeBayar(String method) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
 
-  final url = Uri.parse("http://localhost:8080/api/orders/${widget.orderId}/metode_bayar");
+  final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/${widget.orderId}/metode_bayar");
   final body = jsonEncode({"metode_bayar": method});
 
   try {
@@ -74,7 +74,7 @@ Widget metodeButton(String method, IconData icon) {
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final url = Uri.parse("http://localhost:8080/api/orders/tagihan");
+    final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/tagihan");
 
     final body = jsonEncode({
       "id": widget.orderId,
@@ -114,7 +114,7 @@ Widget metodeButton(String method, IconData icon) {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-    final url = Uri.parse("http://localhost:8080/api/orders/${widget.orderId}");
+    final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/${widget.orderId}");
 
     try {
       final response = await http.get(url, headers: {
@@ -150,7 +150,7 @@ Widget metodeButton(String method, IconData icon) {
   Future<void> validasiPembayaran() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final url = Uri.parse("http://localhost:8080/api/orders/payment-validasi");
+    final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/payment-validasi");
 
     final body = jsonEncode({"id": widget.orderId});
 

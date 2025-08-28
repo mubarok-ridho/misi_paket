@@ -28,7 +28,7 @@ class _PilihKurirPageState extends State<PilihKurirPage> {
 
   Future<void> fetchAvailableKurir() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:8080/kurir/available'));
+      final response = await http.get(Uri.parse('https://gin-production-77e5.up.railway.app/kurir/available'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);

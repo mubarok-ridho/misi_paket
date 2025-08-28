@@ -63,7 +63,7 @@ class _OrderListPageState extends State<OrderListPage> {
       }
 
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/my-orders'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/my-orders'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

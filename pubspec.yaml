@@ -50,7 +50,8 @@ flutter:
     - lib/assets/goods.png
     - lib/assets/passanger.png
     - lib/assets/promo1.png
-    - lib/assets/promo2.jpg
+    - lib/assets/promo2.png
+    - lib/assets/promo3.png
     - lib/assets/iconapk.png
     - lib/assets/hi_icon.png
     - lib/assets/sembako.png

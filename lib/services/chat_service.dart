@@ -27,7 +27,7 @@ class Message {
 
 
 class ChatService {
-  static const String baseUrl = 'http://localhost:8080'; // Ganti jika perlu
+  static const String baseUrl = 'https://gin-production-77e5.up.railway.app'; // Ganti jika perlu
 
   static Future<ChatMessage> sendMessage({
     required String orderId,

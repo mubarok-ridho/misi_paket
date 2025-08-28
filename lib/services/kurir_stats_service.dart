@@ -22,17 +22,17 @@ class KurirStatsService {
       };
 
       final prosesResponse = await http.get(
-        Uri.parse('http://localhost:8080/api/kurir/$kurirId/orders/proses'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/kurir/$kurirId/orders/proses'),
         headers: headers,
       );
 
       final selesaiResponse = await http.get(
-        Uri.parse('http://localhost:8080/api/kurir/$kurirId/orders/selesai/today'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/kurir/$kurirId/orders/selesai/today'),
         headers: headers,
       );
 
       final pendapatanResponse = await http.get(
-        Uri.parse('http://localhost:8080/api/pendapatan/kurir/$kurirId/today'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/pendapatan/kurir/$kurirId/today'),
         headers: headers,
       );
 

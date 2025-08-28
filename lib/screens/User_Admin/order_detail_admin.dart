@@ -12,15 +12,20 @@ class AdminOrderDetailPage extends StatelessWidget {
     final customer = order['customer']?['name'] ?? 'Tidak diketahui';
     final kurir = order['kurir']?['name'] ?? 'Belum assigned';
     final layanan = order['layanan'] ?? 'Barang';
-    // final jemput = order['alamat_jemput'] ?? '-';
-    // final antar = order['alamat_antar'] ?? '-';
+
 
     DateTime createdAt =
-        DateTime.tryParse(order['created_at'] ?? '') ?? DateTime.now();
-    final tanggal =
-        "${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')}";
-    final jam =
-        "${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}";
+    DateTime.tryParse(order['created_at'] ?? '') ?? DateTime.now();
+
+// Convert dari UTC ke WIB (+7 jam)
+final createdAtWIB = createdAt.toUtc().add(Duration(hours: 7));
+
+final tanggal =
+    "${createdAtWIB.year}-${createdAtWIB.month.toString().padLeft(2, '0')}-${createdAtWIB.day.toString().padLeft(2, '0')}";
+final jam =
+    "${createdAtWIB.hour.toString().padLeft(2, '0')}:${createdAtWIB.minute.toString().padLeft(2, '0')}";
+
+
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -39,8 +44,9 @@ class AdminOrderDetailPage extends StatelessWidget {
               _buildCard('🚚 Kurir', kurir),
               _buildCard('📅 Tanggal', tanggal),
               _buildCard('⏰ Jam', jam),
-              _buildCard('💰 Nominal Tagihan', 'Rp ${order['nominal'] ?? 0}'),
-              _buildCard('💳 Status Pembayaran', order['payment_status'] ?? 'Belum diketahui'),
+              _buildCard('💰 Nominal Tagihan', 'Rp ${order['nominal'] ?? 'Belum Dikonfirmasi Kurir'}'),
+              _buildCard('🟠 Status Pembayaran', order['payment_status'] ?? 'Belum Dikonfirmasi Kurir'),
+              _buildCard('💳 Metode Pembayaran', order['metode_bayar'] ?? 'Belum Dikonfirmasi Kurir'),
               _buildCard('🟠 Status', order['status']),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -87,7 +93,7 @@ class AdminOrderDetailPage extends StatelessWidget {
 
                     final response = await http.delete(
                       Uri.parse(
-                          "http://localhost:8080/messages/order/${order['id']}"),
+                          "https://gin-production-77e5.up.railway.app/messages/order/${order['id']}"),
                     );
 
                     if (response.statusCode == 200) {

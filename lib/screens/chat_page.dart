@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -9,7 +11,11 @@ class Message {
   final int senderId;
   final DateTime time;
 
-  Message({required this.text, required this.senderId, required this.time, required sender});
+  Message(
+      {required this.text,
+      required this.senderId,
+      required this.time,
+      required sender});
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
@@ -47,14 +53,17 @@ class _ChatPageState extends State<ChatPage> {
   final CentrifugoService _centrifugoService = CentrifugoService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _showSendErrorAlert = false;
 
   List<Message> _messages = [];
   String? token;
+  StreamSubscription<Map<String, dynamic>>? _messageSub;
 
-  final Color bgColor = Color(0xFF121212);         // soft black
-  final Color bubbleMe = Color.fromARGB(255, 14, 69, 121);        // blue-cyan
-  final Color bubbleOther = Color.fromARGB(255, 188, 89, 14);     // soft gray
-  final Color accentOrange = Color(0xFFFF9800);    // orange
+
+  final Color bgColor = Color(0xFF121212); // soft black
+  final Color bubbleMe = Color.fromARGB(255, 14, 69, 121); // blue-cyan
+  final Color bubbleOther = Color.fromARGB(255, 188, 89, 14); // soft gray
+  final Color accentOrange = Color(0xFFFF9800); // orange
 
   @override
   void initState() {
@@ -63,8 +72,23 @@ class _ChatPageState extends State<ChatPage> {
     _initializeChat();
   }
 
+  void _showSendErrorMessage() {
+    setState(() {
+      _showSendErrorAlert = true;
+    });
+
+    Future.delayed(Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showSendErrorAlert = false;
+        });
+      }
+    });
+  }
+
   Future<void> loadMessagesFromDatabase() async {
-    final url = Uri.parse('http://localhost:8080/chat/load/${widget.orderId}');
+    final url = Uri.parse(
+        'https://gin-production-77e5.up.railway.app/chat/load/${widget.orderId}');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -94,24 +118,27 @@ class _ChatPageState extends State<ChatPage> {
         widget.orderId,
       );
 
-      _centrifugoService.messageStream.listen((msg) {
-        try {
-          final messageData = msg as Map<String, dynamic>;
-          final message = Message.fromJson(messageData);
-          setState(() {
-            _messages.add(message);
-            _scrollToBottom();
-          });
-        } catch (e) {
-          print("❌ Parse message error: $e");
-        }
-      });
+      await _messageSub?.cancel(); // cancel listener lama dulu
+_messageSub = _centrifugoService.messageStream.listen((msg) {
+  try {
+    final messageData = msg as Map<String, dynamic>;
+    final message = Message.fromJson(messageData);
+    setState(() {
+      _messages.add(message);
+      _scrollToBottom();
+    });
+  } catch (e) {
+    print("❌ Parse message error: $e");
+  }
+});
+
     }
   }
 
   Future<String?> _fetchCentrifugoToken(String userId) async {
     final response = await http.get(
-      Uri.parse('http://localhost:8080/centrifugo/token?user_id=$userId'),
+      Uri.parse(
+          'https://gin-production-77e5.up.railway.app/centrifugo/token?user_id=$userId'),
     );
 
     if (response.statusCode == 200) {
@@ -128,7 +155,8 @@ class _ChatPageState extends State<ChatPage> {
     if (messageText.isEmpty) return;
 
     final response = await http.post(
-      Uri.parse('http://localhost:8080/chat/send'),
+      Uri.parse(
+          'https://gin-production-77e5.up.railway.app/chat/send'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'order_id': widget.orderId.toString(),
@@ -139,22 +167,12 @@ class _ChatPageState extends State<ChatPage> {
       }),
     );
 
-    if (response.statusCode == 200) {
-      _messageController.clear();
-      final message = Message(
-  text: messageText,
-  senderId: widget.userId,
-  time: DateTime.now(),
-  sender: widget.sender,
-);
+    _messageController.clear(); // clear text dulu
+if (response.statusCode != 200) {
+  print('❌ Failed to send message: ${response.body}');
+  _showSendErrorMessage(); // panggil alert ini
+}
 
-      setState(() {
-        _messages.add(message);
-        _scrollToBottom();
-      });
-    } else {
-      print('❌ Failed to send message: ${response.body}');
-    }
   }
 
   void _scrollToBottom() {
@@ -171,6 +189,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _messageSub?.cancel();
     _centrifugoService.disconnect();
     _messageController.dispose();
     _scrollController.dispose();
@@ -182,136 +201,162 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-  automaticallyImplyLeading: false, // Ini menghilangkan tombol back
-  backgroundColor: Colors.black,
-  iconTheme: IconThemeData(color: Colors.white),
-  elevation: 1,
-  title: Row(
-    children: [
-      const CircleAvatar(
-        backgroundColor: Color(0xFF444444),
-        child: Icon(Icons.person, color: Colors.white),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Text(
-          widget.receiverName,
-          style: TextStyle(color: accentOrange, fontSize: 18),
-          overflow: TextOverflow.ellipsis,
+        automaticallyImplyLeading: false, // Ini menghilangkan tombol back
+        backgroundColor: Colors.black,
+        iconTheme: IconThemeData(color: Colors.white),
+        elevation: 1,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Color(0xFF444444),
+              child: Icon(Icons.person, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.receiverName,
+                style: TextStyle(color: accentOrange, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
-    ],
-  ),
-),
-
       body: Stack(
-  children: [
-    Opacity(
-      opacity: 0.25,
-      child: Image.asset(
-        'lib/assets/pattern.png',
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      ),
-    ),
-    Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(12),
-            itemCount: _messages.length,
-            itemBuilder: (context, index) {
-              final msg = _messages[index];
-              final isMe = msg.senderId == widget.userId;
-              final time = DateFormat('HH:mm').format(msg.time);
-
-              return Align(
-                alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isMe ? bubbleMe : bubbleOther,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                      bottomLeft: Radius.circular(isMe ? 12 : 0),
-                      bottomRight: Radius.circular(isMe ? 0 : 12),
+        children: [
+          Opacity(
+            opacity: 0.25,
+            child: Image.asset(
+              'lib/assets/pattern.png',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+          Column(
+            children: [
+              if (_showSendErrorAlert)
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Card(
+                    color: Colors.red[100],
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red[800]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "Server terputus nih, tapi jangan khawatir! Chat kamu tetap kekirim kok, jadi cukup tekan tombol send sekali aja yaa, sambil nunggu servernya connect lagi",
+                              style: TextStyle(color: Colors.red[900]),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.75,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        msg.text,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-              );
-            },
-          ),
-        ),
-        const Divider(height: 1, color: Colors.grey),
-        Container(
-          color: Colors.black,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
               Expanded(
-                child: TextField(
-                  controller: _messageController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Tulis pesan...',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: Color(0xFF2A2A2A),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = _messages[index];
+                    final isMe = msg.senderId == widget.userId;
+                    final time = DateFormat('HH:mm').format(msg.time.add(Duration(hours: 7)));
+
+                    return Align(
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isMe ? bubbleMe : bubbleOther,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                            bottomLeft: Radius.circular(isMe ? 12 : 0),
+                            bottomRight: Radius.circular(isMe ? 0 : 12),
+                          ),
+                        ),
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.75,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              msg.text,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              time,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _sendMessage,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: accentOrange,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.send, color: Colors.white, size: 20),
+              const Divider(height: 1, color: Colors.grey),
+              Container(
+                color: Colors.black,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        style: TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Tulis pesan...',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Color(0xFF2A2A2A),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _sendMessage,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: accentOrange,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.send,
+                            color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    ),
-  ],
-),
-
+        ],
+      ),
     );
   }
 }

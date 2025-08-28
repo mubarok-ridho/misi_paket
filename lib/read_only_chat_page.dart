@@ -50,7 +50,7 @@ class _ReadOnlyChatPageState extends State<ReadOnlyChatPage> {
 
   Future<void> _loadMessages() async {
     final response =
-        await http.get(Uri.parse("http://localhost:8080/chat/load/${widget.orderId}"));
+        await http.get(Uri.parse("https://gin-production-77e5.up.railway.app/chat/load/${widget.orderId}"));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

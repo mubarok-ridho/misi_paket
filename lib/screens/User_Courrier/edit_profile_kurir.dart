@@ -37,7 +37,7 @@ class _EditKurirProfilePageState extends State<EditKurirProfilePage> {
 
     try {
       final res = await http.get(
-        Uri.parse("http://localhost:8080/api/kurir/$kurirId"),
+        Uri.parse("https://gin-production-77e5.up.railway.app/api/kurir/$kurirId"),
         headers: {"Authorization": "Bearer $token"},
       );
 
@@ -61,7 +61,7 @@ class _EditKurirProfilePageState extends State<EditKurirProfilePage> {
 
     try {
       final res = await http.put(
-        Uri.parse("http://localhost:8080/api/kurir/up/$kurirId"),
+        Uri.parse("https://gin-production-77e5.up.railway.app/api/kurir/up/$kurirId"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json"

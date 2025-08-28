@@ -12,6 +12,8 @@ class AdminOrderTab extends StatefulWidget {
 }
 
 class _AdminOrderTabState extends State<AdminOrderTab> {
+  String selectedDateFilter = 'Hari ini'; // default
+  final List<String> dateFilters = ['Hari ini', '7 Hari', '30 Hari'];
   List<dynamic> allOrders = [];
   bool showSelesai = false;
   bool isLoading = true;
@@ -35,7 +37,7 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
 
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:8080/api/orders'),
+        Uri.parse('https://gin-production-77e5.up.railway.app/api/orders'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -59,16 +61,39 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
     final keyword = searchController.text.toLowerCase();
 
     final filteredOrders = allOrders.where((order) {
-      final kurir = (order['kurir']?['name'] ?? '').toLowerCase(); // tambahkan ini
+      final kurir =
+          (order['kurir']?['name'] ?? '').toLowerCase(); // tambahkan ini
       final kurirMatch = kurir.contains(keyword); // dan ini
       final customer = (order['customer']?['name'] ?? '').toLowerCase();
       final layanan = (order['layanan'] ?? '').toLowerCase();
       final idMatch = '#${order['id']}'.contains(keyword);
       final custMatch = customer.contains(keyword);
       final layMatch = layanan.contains(keyword);
-      final statusMatch =
-          showSelesai ? order['status'] == 'selesai' : order['status'] != 'selesai';
-      return statusMatch && (idMatch || custMatch || layMatch || kurirMatch);
+      final statusMatch = showSelesai
+          ? order['status'] == 'selesai'
+          : order['status'] != 'selesai';
+
+      final createdAtStr = order['created_at'] ?? '';
+      final createdAt =
+          DateTime.tryParse(createdAtStr)?.toUtc().add(Duration(hours: 7)) ??
+              DateTime.now();
+
+      bool dateMatch = false;
+      final now = DateTime.now();
+
+      if (selectedDateFilter == 'Hari ini') {
+        dateMatch = createdAt.year == now.year &&
+            createdAt.month == now.month &&
+            createdAt.day == now.day;
+      } else if (selectedDateFilter == '7 Hari') {
+        dateMatch = createdAt.isAfter(now.subtract(Duration(days: 6)));
+      } else if (selectedDateFilter == '30 Hari') {
+        dateMatch = createdAt.isAfter(now.subtract(Duration(days: 29)));
+      }
+
+      return statusMatch &&
+          dateMatch &&
+          (idMatch || custMatch || layMatch || kurirMatch);
     }).toList();
 
     return Scaffold(
@@ -107,7 +132,34 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tampilkan:',
+                    const Text('Filter Waktu:',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
+                    DropdownButton<String>(
+                      value: selectedDateFilter,
+                      dropdownColor: const Color(0xFF2A2A2A),
+                      style: const TextStyle(color: Colors.white),
+                      underline: Container(),
+                      items: dateFilters.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedDateFilter = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Status:',
                         style: TextStyle(color: Colors.white, fontSize: 16)),
                     Row(
                       children: [
@@ -118,7 +170,8 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
                         ),
                         Text(showSelesai ? 'Selesai' : 'Proses',
                             style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.w600)),
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ],
@@ -135,19 +188,25 @@ class _AdminOrderTabState extends State<AdminOrderTab> {
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
+                      final createdAtStr = order['created_at'] ?? '';
+                      final createdAt = DateTime.tryParse(createdAtStr)
+                              ?.toUtc()
+                              .add(Duration(hours: 7)) ??
+                          DateTime.now();
+
                       // final customer = order['customer']?['name'] ?? 'Tidak diketahui';
                       final kurir = order['kurir']?['name'] ?? 'Belum assigned';
                       final jenis = order['layanan'] ?? 'Barang';
-                      final createdAtStr = order['created_at'] ?? '';
                       final status = order['status'];
 
-                      // Format tanggal dan jam
-                      DateTime createdAt =
-                          DateTime.tryParse(createdAtStr) ?? DateTime.now();
+// Convert UTC → WIB (+7 jam)
+                      final createdAtWIB =
+                          createdAt.toUtc().add(Duration(hours: 7));
+
                       String tanggal =
-                          "${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')}";
+                          "${createdAtWIB.year}-${createdAtWIB.month.toString().padLeft(2, '0')}-${createdAtWIB.day.toString().padLeft(2, '0')}";
                       String jam =
-                          "${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}";
+                          "${createdAtWIB.hour.toString().padLeft(2, '0')}:${createdAtWIB.minute.toString().padLeft(2, '0')}";
 
                       Color statusColor =
                           status == 'selesai' ? Colors.green : Colors.orange;

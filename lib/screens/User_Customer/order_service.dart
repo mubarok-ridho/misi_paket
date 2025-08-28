@@ -13,7 +13,7 @@ Future<List<OrderSummary>> fetchCustomerOrders() async {
   }
 
   final response = await http.get(
-    Uri.parse('http://localhost:8080/api/my-orders'),
+    Uri.parse('https://gin-production-77e5.up.railway.app/api/my-orders'),
     headers: {'Authorization': 'Bearer $token'},
   );
 

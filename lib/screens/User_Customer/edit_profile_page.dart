@@ -18,107 +18,144 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _emailController = TextEditingController();
 
   bool _isLoading = false;
+  String? userId;
+  String? token;
 
   @override
   void initState() {
     super.initState();
+    _loadTokenAndUser();
+  }
+
+  Future<void> _loadTokenAndUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString('token');
+    userId = prefs.getInt('userId')?.toString();
+
+    if (token == null || userId == null) return;
+
     _fetchUserProfile();
   }
 
   Future<void> _fetchUserProfile() async {
-    _showLoadingDialog();
+  if (!mounted || token == null || userId == null) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
+  _showLoadingDialog("Lagi cari profil kamu ...");
 
-    try {
-      final response = await http.get(
-        Uri.parse('http://localhost:8080/api/users/profile'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+  try {
+    final response = await http.get(
+      Uri.parse('https://gin-production-77e5.up.railway.app/api/users/$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-      Navigator.of(context).pop(); // Close loading dialog
+    Navigator.of(context).pop(); // tutup loading
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-final user = responseData['user'];
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
 
-setState(() {
-  _nameController.text = user['name'] ?? '';
-  _phoneController.text = user['phone'] ?? '';
-  _emailController.text = user['email'] ?? '';
-});
-
+      if (responseData['user'] != null) {
+        final user = responseData['user'];
+        setState(() {
+          _nameController.text = user['name'] ?? '';
+          _phoneController.text = user['phone'] ?? '';
+          _emailController.text = user['email'] ?? '';
+        });
       } else {
-        _showSnackbar('Gagal memuat data profil');
+        _showSnackbar('Data profil tidak ditemukan');
       }
-    } catch (e) {
-      Navigator.of(context).pop();
-      _showSnackbar('Terjadi kesalahan koneksi');
+    } else if (response.statusCode == 404) {
+      _showSnackbar('Customer tidak ditemukan');
+    } else {
+      _showSnackbar('Gagal memuat data profil');
     }
+  } catch (e) {
+    Navigator.of(context).pop();
+    _showSnackbar('Terjadi kesalahan koneksi');
   }
+}
+
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
+  setState(() => _isLoading = true);
 
-    try {
-      final response = await http.put(
-        Uri.parse('http://localhost:8080/api/update-profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'name': _nameController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'email': _emailController.text.trim(),
-        }),
-      );
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
 
-      if (response.statusCode == 200) {
-        _showSnackbar('Profil berhasil diperbarui');
-        Navigator.pop(context, true);
-      } else {
-        _showSnackbar('Gagal menyimpan perubahan');
-      }
-    } catch (e) {
-      _showSnackbar('Terjadi kesalahan saat menyimpan');
-    }
-
+  if (token == null || token.isEmpty) {
+    _showSnackbar('Token user tidak tersedia');
     setState(() => _isLoading = false);
+    return;
   }
 
+  _showLoadingDialog("Menyimpan perubahan ...");
+
+  try {
+    final response = await http.put(
+      Uri.parse('https://gin-production-77e5.up.railway.app/api/update-profile'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode({
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'email': _emailController.text.trim(),
+      }),
+    );
+
+    Navigator.of(context).pop(); // tutup loading
+
+    if (response.statusCode == 200) {
+      _showSnackbar('Profil berhasil diperbarui');
+      Navigator.pop(context, true);
+    } else {
+      final res = json.decode(response.body);
+      _showSnackbar(res['error'] ?? 'Gagal menyimpan perubahan');
+    }
+  } catch (e) {
+    Navigator.of(context).pop();
+    _showSnackbar('Terjadi kesalahan saat menyimpan');
+  }
+
+  setState(() => _isLoading = false);
+}
+
   void _showSnackbar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Lottie.asset('lib/assets/loading_profile.json', width: 180, height: 180),
-            const SizedBox(height: 16),
-            const Text(
-              "Bentar ya, lagi cari profil kamu...",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
+  void _showLoadingDialog(String message) {
+  if (!mounted) return;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 150,
+            width: 150,
+            child: Lottie.asset('lib/assets/Fainyetir.json'),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
@@ -188,7 +225,8 @@ setState(() {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Simpan Perubahan", style: TextStyle(fontSize: 16)),
+                      : const Text("Simpan Perubahan",
+                          style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],

@@ -114,7 +114,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         };
 
         final response = await http.post(
-          Uri.parse("http://localhost:8080/orders"), // Ganti dengan URL kamu
+          Uri.parse("https://gin-production-77e5.up.railway.app/orders"), // Ganti dengan URL kamu
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(body),
         );

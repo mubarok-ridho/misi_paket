@@ -19,75 +19,160 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController identifierCtrl = TextEditingController();
   final TextEditingController passCtrl = TextEditingController();
+
   bool isLoading = false;
   bool showPassword = false;
   String? errorMsg;
   final LocalAuthentication auth = LocalAuthentication();
 
   Future<void> _login() async {
-    final identifier = identifierCtrl.text.trim();
-    final pass = passCtrl.text.trim();
+  final identifier = identifierCtrl.text.trim();
+  final pass = passCtrl.text.trim();
 
-    if (identifier.isEmpty || pass.isEmpty) {
-      setState(() => errorMsg = "Email / Nomor dan password wajib diisi");
+  if (identifier.isEmpty || pass.isEmpty) {
+    setState(() => errorMsg = "Email / Nomor dan password wajib diisi");
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+    errorMsg = null;
+  });
+
+  try {
+    final res = await http.post(
+      Uri.parse("https://gin-production-77e5.up.railway.app/login"),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': identifier, 'password': pass}),
+    );
+
+    final data = jsonDecode(res.body);
+    setState(() => isLoading = false);
+
+    if (res.statusCode == 200) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', data['token']);
+      await prefs.setInt('userId', data['user']['id']);
+      await prefs.setString('email', identifier); // ✅ Simpan email
+      await prefs.setString('password', pass);    // ✅ Simpan password
+
+      _navigateByRole(data['user']['role']);
+    } else {
+      setState(() => errorMsg = data['error'] ?? "Login gagal");
+    }
+  } catch (e) {
+    setState(() {
+      isLoading = false;
+      errorMsg = "Gagal terhubung ke server";
+    });
+  }
+}
+
+Future<void> _loginWithBiometric() async {
+  try {
+    print("🔍 Mengecek dukungan biometrik...");
+    bool canCheckBiometrics = await auth.canCheckBiometrics;
+    bool isDeviceSupported = await auth.isDeviceSupported();
+    print("📱 canCheckBiometrics: $canCheckBiometrics, isDeviceSupported: $isDeviceSupported");
+
+    if (!canCheckBiometrics || !isDeviceSupported) {
+      setState(() => errorMsg = "Device tidak mendukung biometrik");
+      print("⛔ Device tidak mendukung biometrik");
       return;
     }
 
-    setState(() {
-      isLoading = true;
-      errorMsg = null;
-    });
+    print("🖐 Meminta autentikasi sidik jari...");
+    final didAuthenticate = await auth.authenticate(
+      localizedReason: 'Gunakan sidik jari untuk login',
+      options: const AuthenticationOptions(biometricOnly: true),
+    );
+    print("✅ didAuthenticate: $didAuthenticate");
 
-    try {
-      final res = await http.post(
-        Uri.parse("http://localhost:8080/login"),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': identifier, 'password': pass}), // Kirim ke backend
-      );
+    if (didAuthenticate) {
+      print("📦 Mengambil email & password dari SharedPreferences...");
+      final prefs = await SharedPreferences.getInstance();
+      String? email = prefs.getString('email');
+      String? password = prefs.getString('password');
+      print("📧 Email: $email");
+      print("🔑 Password: ${password != null ? '••••••' : null}");
 
-      final data = jsonDecode(res.body);
-      setState(() => isLoading = false);
-
-      if (res.statusCode == 200) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
-        await prefs.setInt('userId', data['user']['id']);
-
-        final role = data['user']['role'];
-        if (role == "customer") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CustomerDashboard()));
-        } else if (role == "kurir") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CourierDashboard()));
-        } else if (role == "admin") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminMainPage()));
-        } else {
-          setState(() => errorMsg = "Role tidak dikenali");
-        }
+      if (email != null && password != null) {
+        print("🚀 Login pakai kredensial tersimpan...");
+        await _loginWithSavedCredentials(email, password);
       } else {
-        setState(() => errorMsg = data['error'] ?? "Login gagal");
+        setState(() => errorMsg = "Belum ada data login tersimpan");
+        print("⚠ Tidak ada data email/password tersimpan!");
       }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-        errorMsg = "Gagal terhubung ke server";
-      });
+    } else {
+      print("❌ Autentikasi biometrik dibatalkan/gagal.");
     }
+  } catch (e) {
+    setState(() => errorMsg = "Gagal autentikasi biometrik");
+    print("💥 Error autentikasi biometrik: $e");
+  }
+}
+
+Future<void> _loginWithSavedCredentials(String email, String password) async {
+  setState(() {
+    isLoading = true;
+    errorMsg = null;
+  });
+
+  try {
+    print("🌐 Mengirim request login ke server...");
+    final res = await http.post(
+      Uri.parse("https://gin-production-77e5.up.railway.app/login"),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    print("📥 Status code: ${res.statusCode}");
+    print("📥 Response body: ${res.body}");
+
+    final data = jsonDecode(res.body);
+    setState(() => isLoading = false);
+
+    if (res.statusCode == 200) {
+      print("✅ Login berhasil dengan fingerprint!");
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', data['token']);
+      await prefs.setInt('userId', data['user']['id']);
+      _navigateByRole(data['user']['role']);
+    } else {
+      setState(() => errorMsg = data['error'] ?? "Login fingerprint gagal");
+      print("❌ Login fingerprint gagal: ${data['error']}");
+    }
+  } catch (e) {
+    setState(() {
+      isLoading = false;
+      errorMsg = "Gagal terhubung ke server";
+    });
+    print("💥 Error koneksi: $e");
+  }
+}
+
+
+void _navigateByRole(String role) {
+  if (role == "customer") {
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CustomerDashboard()));
+  } else if (role == "kurir") {
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CourierDashboard()));
+  } else if (role == "admin") {
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminMainPage()));
+  } else {
+    setState(() => errorMsg = "Role tidak dikenali");
+  }
+}
+
+
+  Future<void> saveCredentials(String email, String password) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('email', email);
+  await prefs.setString('password', password);
   }
 
-  Future<void> _loginWithBiometric() async {
-    try {
-      final didAuthenticate = await auth.authenticate(
-        localizedReason: 'Gunakan sidik jari untuk login',
-        options: const AuthenticationOptions(biometricOnly: true),
-      );
 
-      if (didAuthenticate) {
-        _login(); // Opsional: bisa disimpan token terakhir dan login otomatis
-      }
-    } catch (e) {
-      setState(() => errorMsg = "Gagal autentikasi biometrik");
-    }
-  }
+
+
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
         hintText: hint,

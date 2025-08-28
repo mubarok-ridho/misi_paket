@@ -27,7 +27,7 @@ class OrderDetailKurirPage extends StatelessWidget {
   final token = prefs.getString('token') ?? '';
 
   final response = await http.get(
-    Uri.parse('http://localhost:8080/api/orders/$orderId'),
+    Uri.parse('https://gin-production-77e5.up.railway.app/api/orders/$orderId'),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -64,7 +64,7 @@ class OrderDetailKurirPage extends StatelessWidget {
       return;
     }
 
-    final url = Uri.parse("http://localhost:8080/api/orders/status");
+    final url = Uri.parse("https://gin-production-77e5.up.railway.app/api/orders/status");
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
